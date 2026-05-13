@@ -39,7 +39,7 @@
         <!-- TODO: Вставте свій Gmail логін -->
         <username>samaratop259@gmail.com</username>
         <!-- TODO: Вставте пароль додатку (App Password), не основний пароль -->
-        <password>plvsauxntqlnlksn</password>
+        <password>mysecretpassword</password>
 
         <to>samaratop259@gmail.com</to>
         <from>samaratop259@gmail.com</from>
