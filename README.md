@@ -64,14 +64,14 @@
 
 ```bash
 mvn clean compile javafx:run
-
+```
 ### 3️⃣ Запуск тестів та перевірка покриття
 
 Щоб запустити всі тести та згенерувати звіт JaCoCo:
 
 ```bash
 mvn test
-
+```
 (Звіт про покриття коду буде збережено у папці `target/site/jacoco/index.html`)
 
 ---
