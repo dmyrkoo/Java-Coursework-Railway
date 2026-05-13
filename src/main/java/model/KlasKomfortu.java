@@ -1,3 +1,4 @@
+// KlasKomfortu.java
 package model;
 
 public enum KlasKomfortu {

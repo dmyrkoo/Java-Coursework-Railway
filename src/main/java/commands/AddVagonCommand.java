@@ -1,3 +1,4 @@
+// EditVagonCommand.java
 package commands;
 
 import services.SkladService;
@@ -11,7 +12,7 @@ public class AddVagonCommand implements Command {
 
     @Override
     public void execute() {
-        service.dodatyVagon();
+        service.dodatyVagonInteractive();
     }
 
     @Override

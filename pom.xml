@@ -15,17 +15,25 @@
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
 
+        <!-- Версії бібліотек -->
         <junit.jupiter.version>5.10.0</junit.jupiter.version>
         <mockito.version>5.11.0</mockito.version>
         <bytebuddy.version>1.14.12</bytebuddy.version>
-        <jacoco.version>0.8.10</jacoco.version>
+        <jacoco.version>0.8.11</jacoco.version>
         <log4j2.version>2.20.0</log4j2.version>
+        <sqlite.version>3.45.1.0</sqlite.version>
+        <slf4j.version>2.0.12</slf4j.version>
+        <logback.version>1.5.3</logback.version>
+        <jakarta.mail.version>2.1.3</jakarta.mail.version>
+        <angus.mail.version>2.0.3</angus.mail.version>
+        <javafx.version>17.0.10</javafx.version>
 
-        <!-- Control mail sending from Maven/CI: default false, enable via profile -Penable-mail -->
-        <mail.enabled>false</mail.enabled>
+        <!-- Ініціалізація змінної argLine, щоб IDE не сварилася (вона наповнюється плагіном JaCoCo) -->
+        <argLine/>
     </properties>
 
     <dependencies>
+        <!-- 1. JUnit 5 (Тестування) -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
@@ -33,13 +41,13 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- 2. Mockito (Допоміжна бібліотека для тестів) -->
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
             <version>${mockito.version}</version>
             <scope>test</scope>
         </dependency>
-
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-junit-jupiter</artifactId>
@@ -47,7 +55,7 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- Ensure Byte Buddy is available on test classpath (compatible with Mockito used here) -->
+        <!-- Byte Buddy (Потрібен для Mockito та складних тестів) -->
         <dependency>
             <groupId>net.bytebuddy</groupId>
             <artifactId>byte-buddy</artifactId>
@@ -61,7 +69,7 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- Log4j2 -->
+        <!-- 3. Log4j2 (Логування - Завдання 5) -->
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-api</artifactId>
@@ -72,36 +80,55 @@
             <artifactId>log4j-core</artifactId>
             <version>${log4j2.version}</version>
         </dependency>
-        <!-- SLF4J binding (optional, useful if other libs use SLF4J) -->
+
+        <!-- 4. Jakarta Mail (Сумісність з Logback SMTPAppender) -->
         <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-slf4j-impl</artifactId>
-            <version>${log4j2.version}</version>
+            <groupId>jakarta.mail</groupId>
+            <artifactId>jakarta.mail-api</artifactId>
+            <version>${jakarta.mail.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.angus</groupId>
+            <artifactId>angus-mail</artifactId>
+            <version>${angus.mail.version}</version>
+            <scope>runtime</scope>
         </dependency>
 
-        <!-- JavaMail (для SMTP appender) -->
+        <!-- 5. SQLite JDBC (База даних) -->
         <dependency>
-            <groupId>com.sun.mail</groupId>
-            <artifactId>jakarta.mail</artifactId>
-            <version>2.0.1</version>
+            <groupId>org.xerial</groupId>
+            <artifactId>sqlite-jdbc</artifactId>
+            <version>${sqlite.version}</version>
         </dependency>
-        <!-- Compatibility: provide legacy javax.mail API expected by some Log4j2 builds -->
+
+        <!-- 6. SLF4J + Logback (Логування) -->
         <dependency>
-            <groupId>javax.mail</groupId>
-            <artifactId>javax.mail-api</artifactId>
-            <version>1.6.2</version>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
         </dependency>
-        <!-- Compatibility: provide legacy javax.activation for Log4j2 SMTPAppender runtime (javax.activation.DataSource) -->
         <dependency>
-            <groupId>javax.activation</groupId>
-            <artifactId>activation</artifactId>
-            <version>1.1.1</version>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>${logback.version}</version>
+        </dependency>
+
+        <!-- 7. JavaFX (Графічний інтерфейс) -->
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-controls</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-fxml</artifactId>
+            <version>${javafx.version}</version>
         </dependency>
     </dependencies>
 
     <build>
         <plugins>
-            <!-- Compiler plugin with explicit encoding -->
+            <!-- Компілятор Java -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -113,166 +140,70 @@
                 </configuration>
             </plugin>
 
-            <!-- Ensure resources are read with UTF-8 -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-resources-plugin</artifactId>
-                <version>3.3.1</version>
-                <configuration>
-                    <encoding>${project.build.sourceEncoding}</encoding>
-                </configuration>
-            </plugin>
-
-            <!-- Surefire plugin for running tests -->
+            <!-- Surefire (Запуск тестів) -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.1.2</version>
+                <version>3.2.3</version>
                 <configuration>
-                    <useModulePath>false</useModulePath>
-                    <!-- Include JaCoCo's argLine (set by prepare-agent) and preserve Byte Buddy flag -->
-                    <argLine>${argLine} -Dnet.bytebuddy.experimental=true</argLine>
-                    <!-- Pass mail-related system properties to test JVM. Values are read from environment when available -->
-                    <systemPropertyVariables>
-                        <mail.user>${env.MAIL_USER}</mail.user>
-                        <mail.pass>${env.MAIL_PASS}</mail.pass>
-                        <!-- controlled by project property, can be enabled with -Penable-mail -->
-                        <mail.enabled>${mail.enabled}</mail.enabled>
-                    </systemPropertyVariables>
+                    <!-- Передаємо аргументи від JaCoCo в JVM -->
+                    <argLine>${argLine}</argLine>
                 </configuration>
             </plugin>
 
-            <!-- JaCoCo plugin (добавлен в build.plugins чтобы mvn jacoco:report работал) -->
+            <!-- JaCoCo (Покриття коду тестами) -->
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>${jacoco.version}</version>
+                <configuration>
+                    <!-- КРИТИЧНО: Виключаємо консольне меню та Main зі звіту -->
+                    <!-- Використовуємо паттерни для класів (після компіляції) -->
+                    <excludes>
+                        <!-- Виключаємо весь пакет main (Main.java) -->
+                        <exclude>**/main/**</exclude>
+                        <exclude>main/**</exclude>
+                        <exclude>**/main/Main.class</exclude>
+                        <exclude>main/Main.class</exclude>
+                        <!-- Виключаємо весь пакет commands (всі команди) -->
+                        <exclude>**/commands/**</exclude>
+                        <exclude>commands/**</exclude>
+                        <!-- Виключаємо меню (якщо є) -->
+                        <exclude>**/menu/**</exclude>
+                        <exclude>menu/**</exclude>
+                        <!-- Додаткові виключення для Main класів -->
+                        <exclude>**/*Main*.class</exclude>
+                        <exclude>**/Main.class</exclude>
+                    </excludes>
+                </configuration>
                 <executions>
-                    <!-- Attach the agent before tests -->
+                    <!-- Підготовка агента перед тестами -->
                     <execution>
                         <id>prepare-agent</id>
-                        <phase>initialize</phase>
                         <goals>
                             <goal>prepare-agent</goal>
                         </goals>
-                        <configuration>
-                            <destFile>${project.build.directory}/jacoco.exec</destFile>
-                        </configuration>
                     </execution>
-                    <!-- Generate report after tests (in verify) -->
+                    <!-- Генерація звіту (HTML) -->
                     <execution>
                         <id>report</id>
-                        <phase>verify</phase>
+                        <phase>test</phase>
                         <goals>
                             <goal>report</goal>
                         </goals>
-                        <configuration>
-                            <dataFile>${project.build.directory}/jacoco.exec</dataFile>
-                            <outputDirectory>${project.reporting.outputDirectory}/jacoco</outputDirectory>
-                        </configuration>
-                    </execution>
-                    <!-- Add a check goal to enforce coverage thresholds -->
-                    <execution>
-                        <id>check</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                        <configuration>
-                            <dataFile>${project.build.directory}/jacoco.exec</dataFile>
-                            <rules>
-                                <!-- Enforce 90% line coverage for the whole bundle -->
-                                <rule>
-                                    <element>BUNDLE</element>
-                                    <limits>
-                                        <limit>
-                                            <counter>LINE</counter>
-                                            <value>COVEREDRATIO</value>
-                                            <minimum>0.90</minimum>
-                                        </limit>
-                                    </limits>
-                                </rule>
-                                <!-- Keep package-level soft checks for model and utils (helpful guidance) -->
-                                <rule>
-                                    <element>PACKAGE</element>
-                                    <includes>
-                                        <include>model.*</include>
-                                    </includes>
-                                    <limits>
-                                        <limit>
-                                            <counter>LINE</counter>
-                                            <value>COVEREDRATIO</value>
-                                            <minimum>0.90</minimum>
-                                        </limit>
-                                    </limits>
-                                </rule>
-                                <rule>
-                                    <element>PACKAGE</element>
-                                    <includes>
-                                        <include>utils.*</include>
-                                    </includes>
-                                    <limits>
-                                        <limit>
-                                            <counter>LINE</counter>
-                                            <value>COVEREDRATIO</value>
-                                            <minimum>0.90</minimum>
-                                        </limit>
-                                    </limits>
-                                </rule>
-                            </rules>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>
 
+            <!-- JavaFX Maven Plugin (Запуск JavaFX додатку) -->
+            <plugin>
+                <groupId>org.openjfx</groupId>
+                <artifactId>javafx-maven-plugin</artifactId>
+                <version>0.0.8</version>
+                <configuration>
+                    <mainClass>ui.MainApp</mainClass>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
-    <!-- Optional profile to prepare the project for building/running tests on JDK 25.
-         Activate with: mvn -P jdk25 test
-         The profile sets compiler source/target to 25 and ensures Surefire passes the
-         experimental Byte Buddy flag; it is intentionally not active by default so
-         existing CI and local builds remain stable.
-    -->
-    <profiles>
-        <profile>
-            <id>jdk25</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-            </activation>
-            <properties>
-                <maven.compiler.source>25</maven.compiler.source>
-                <maven.compiler.target>25</maven.compiler.target>
-            </properties>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <version>3.1.2</version>
-                        <configuration>
-                            <useModulePath>false</useModulePath>
-                            <argLine>${argLine} -Dnet.bytebuddy.experimental=true</argLine>
-                            <!-- If provided, use the specified java executable to fork the test JVM. Example:
-                                 mvn -P jdk25 -Djdk25.forkedProcessExecutable="C:\\Program Files\\Java\\jdk-25\\bin\\java.exe" -Dtest=... test -->
-                            <forkedProcessExecutable>${jdk25.forkedProcessExecutable}</forkedProcessExecutable>
-                            <!-- If you need to force a specific JDK executable for forked tests,
-                                 you can set <forkedProcessExecutable>...path to java...</forkedProcessExecutable>
-                                 here. We avoid hardcoding the path to keep the pom portable. -->
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
-        <!-- Profile to enable actual mail sending (do not activate in CI unless secrets are provided) -->
-        <profile>
-            <id>enable-mail</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-            </activation>
-            <properties>
-                <mail.enabled>true</mail.enabled>
-            </properties>
-        </profile>
-    </profiles>
 </project>

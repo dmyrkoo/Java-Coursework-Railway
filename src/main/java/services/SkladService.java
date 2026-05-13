@@ -1,34 +1,106 @@
+// SkladService.java
 package services;
 
 import model.*;
+import repository.SqliteVagonRepository;
+import repository.VagonRepository;
 import utils.FileManager;
+
 import java.io.IOException;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Scanner;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * Сервіс для управління складом потягу.
+ * Синхронізує операції з оперативною пам'яттю та базою даних.
+ */
 public class SkladService {
-    private static final Logger logger = LogManager.getLogger(SkladService.class);
+
+    private static final Logger logger = LoggerFactory.getLogger(SkladService.class);
 
     private final Potiag potiag;
     private final Scanner scanner;
+    private final VagonRepository repository;
     private int nextId = 1;
 
-    public SkladService(Potiag potiag) {
-        this(potiag, new Scanner(System.in));
-    }
-
-    // New constructor for testing: allows injecting custom Scanner (e.g., from String)
-    public SkladService(Potiag potiag, Scanner scanner) {
+    /**
+     * Конструктор з повною ін'єкцією залежностей.
+     *
+     * @param potiag     потяг для управління
+     * @param scanner    джерело вводу
+     * @param repository репозиторій для збереження в БД
+     */
+    public SkladService(Potiag potiag, Scanner scanner, VagonRepository repository) {
         this.potiag = potiag;
         this.scanner = scanner;
+        this.repository = repository;
         logger.info("SkladService створено для потяга: {}", potiag.getNazva());
         logger.info("SkladService created for train: " + potiag.getNazva());
     }
 
-    public void dodatyVagon() {
+    /**
+     * Конструктор з репозиторієм та стандартним System.in.
+     */
+    public SkladService(Potiag potiag, VagonRepository repository) {
+        this(potiag, new Scanner(System.in), repository);
+    }
+
+    /**
+     * Конструктор без репозиторію (зворотна сумісність для тестів).
+     */
+    public SkladService(Potiag potiag, Scanner scanner) {
+        this(potiag, scanner, null);
+    }
+
+    /**
+     * Конструктор за замовчуванням (System.in, без репозиторію).
+     */
+    public SkladService(Potiag potiag) {
+        this(potiag, new Scanner(System.in), null);
+    }
+
+    /**
+     * Завантажує вагони з бази даних в оперативну пам'ять потягу.
+     * Якщо репозиторій не підключено, нічого не відбувається.
+     */
+    public void zavantazhytyZBazy() {
+        if (repository == null) {
+            logger.warn("Репозиторій не підключено, пропускаю завантаження з БД");
+            return;
+        }
+
+        List<Vagon> vagons = repository.getAllVagons();
+        for (Vagon v : vagons) {
+            potiag.dodatyVagon(v);
+            if (v.getId() >= nextId) {
+                nextId = v.getId() + 1;
+            }
+        }
+
+        System.out.println("✅ Завантажено " + vagons.size() + " вагонів з бази даних");
+        logger.info("Завантажено {} вагонів з БД у потяг '{}'", vagons.size(), potiag.getNazva());
+    }
+
+    /**
+     * Додає готовий вагон у потяг та зберігає в БД.
+     * Призначений для виклику з UI або програмного коду.
+     *
+     * @param vagon вагон для додавання
+     */
+    public void dodatyVagon(Vagon vagon) {
+        potiag.dodatyVagon(vagon);
+        saveToRepository(vagon);
+        logger.info("Додано вагон ID={} ({}) через програмний виклик", vagon.getId(), vagon.getType());
+    }
+
+    /**
+     * Інтерактивне додавання вагону через консоль (Scanner).
+     */
+    public void dodatyVagonInteractive() {
         System.out.println("\n=== Додавання вагону ===");
         System.out.println("1 - Пасажирський");
         System.out.println("2 - Службовий");
@@ -74,6 +146,7 @@ public class SkladService {
             );
 
             potiag.dodatyVagon(vagon);
+            saveToRepository(vagon);
             System.out.println("✅ Додано: " + vagon);
             logger.info("Додано пасажирський вагон ID {} (комфорт: {}, пасажирів: {})", vagon.getId(), komf, pasazhyriv);
             logger.info("Added passenger wagon ID " + vagon.getId());
@@ -108,6 +181,7 @@ public class SkladService {
             );
 
             potiag.dodatyVagon(vagon);
+            saveToRepository(vagon);
             System.out.println("✅ Додано: " + vagon);
             logger.info("Додано службовий вагон ID {} (тип: {}, персонал: {})", vagon.getId(), typ, personal);
             logger.info("Added service wagon ID " + vagon.getId());
@@ -133,6 +207,7 @@ public class SkladService {
         try {
             int id = Integer.parseInt(scanner.nextLine());
             if (potiag.vydalytyVagon(id)) {
+                deleteFromRepository(id);
                 System.out.println("✅ Вагон #" + id + " видалено");
                 logger.info("Видалено вагон ID {}", id);
                 logger.info("Deleted wagon ID " + id);
@@ -199,6 +274,7 @@ public class SkladService {
                 }
             }
 
+            saveToRepository(vagon);
             System.out.println("✅ Оновлено: " + vagon);
             logger.info("Оновлено вагон ID {}", id);
             logger.info("Updated wagon ID " + id);
@@ -344,5 +420,36 @@ public class SkladService {
     public Potiag getPotiag() {
         return potiag;
     }
-}
 
+    // ========== Допоміжні методи для роботи з репозиторієм ==========
+
+    /**
+     * Зберігає вагон у репозиторій, якщо він підключений.
+     */
+    private void saveToRepository(Vagon vagon) {
+        if (repository != null) {
+            try {
+                repository.saveVagon(vagon);
+                logger.info("Вагон ID={} синхронізовано з БД", vagon.getId());
+            } catch (Exception e) {
+                logger.error("Помилка синхронізації вагону ID={} з БД", vagon.getId(), e);
+                System.out.println("⚠️ Вагон додано в пам'ять, але не збережено в БД");
+            }
+        }
+    }
+
+    /**
+     * Видаляє вагон з репозиторію, якщо він підключений.
+     */
+    private void deleteFromRepository(int id) {
+        if (repository instanceof SqliteVagonRepository sqliteRepo) {
+            try {
+                sqliteRepo.deleteVagon(id);
+                logger.info("Вагон ID={} видалено з БД", id);
+            } catch (Exception e) {
+                logger.error("Помилка видалення вагону ID={} з БД", id, e);
+                System.out.println("⚠️ Вагон видалено з пам'яті, але не з БД");
+            }
+        }
+    }
+}

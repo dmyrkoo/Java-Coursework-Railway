@@ -1,3 +1,4 @@
+// DeleteVagonCommand.java
 package commands;
 
 import services.SkladService;

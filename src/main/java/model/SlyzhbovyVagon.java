@@ -1,3 +1,4 @@
+// SluzhbovyVagon.java
 package model;
 
 public class SlyzhbovyVagon extends Vagon {

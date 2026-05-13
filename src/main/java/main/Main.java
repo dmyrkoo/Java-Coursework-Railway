@@ -1,8 +1,9 @@
-// java
+// Main
 package main;
 
 import commands.*;
 import model.Potiag;
+import repository.SqliteVagonRepository;
 import services.SkladService;
 import utils.FileManager;
 
@@ -15,16 +16,17 @@ public class Main {
     private final List<Command> commands = new ArrayList<>();
     private final Scanner scanner = new Scanner(System.in);
     private final SkladService service;
+    private final SqliteVagonRepository repository;
 
     public Main() {
         Potiag potiag = new Potiag("Lviv-Kyiv Express");
-        service = new SkladService(potiag);
+        repository = new SqliteVagonRepository();
+        service = new SkladService(potiag, repository);
 
-        if (FileManager.fileExists()) {
-            System.out.println("📂 Знайдено збережені дані. Завантажую...");
-            System.out.println("[INFO] Знайдено файл збережених даних. Розпочато завантаження.");
-            service.zavantazhytyZFile();
-        }
+        // Завантаження складу з бази даних при старті
+        System.out.println("📂 Завантаження даних з бази даних...");
+        System.out.println("[INFO] Завантаження вагонів з SQLite БД.");
+        service.zavantazhytyZBazy();
 
         commands.add(new AddVagonCommand(service));
         commands.add(new ShowSkladCommand(service));
@@ -58,6 +60,7 @@ public class Main {
                     System.err.println("[ERROR] Помилка під час збереження даних при завершенні програми: " + e.getMessage());
                     e.printStackTrace();
                 }
+                repository.close();
                 System.out.println("[INFO] Application finished");
                 break;
             }

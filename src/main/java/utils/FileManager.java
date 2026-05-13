@@ -1,15 +1,21 @@
+// FileManager.java
 package utils;
 
 import model.*;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class FileManager {
-    private static final Logger logger = LogManager.getLogger(FileManager.class);
+    private static final Logger logger = LoggerFactory.getLogger(FileManager.class);
     private static final String DEFAULT_FILE = "potiag_data.txt";
+
+    // Приватний конструктор для запобігання створення екземплярів утилітного класу
+    private FileManager() {
+        throw new IllegalStateException("Utility class");
+    }
 
     public static void zberegty(Potiag potiag, String filename) throws IOException {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(filename))) {
@@ -109,6 +115,11 @@ public class FileManager {
     }
 
     public static boolean fileExists() {
-        return new File(DEFAULT_FILE).exists();
+        return fileExists(DEFAULT_FILE);
+    }
+
+    // Перевантажений метод для тестування з конкретним файлом
+    public static boolean fileExists(String filename) {
+        return new File(filename).exists();
     }
 }
