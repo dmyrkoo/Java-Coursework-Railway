@@ -197,6 +197,21 @@ public class SkladService {
         }
     }
 
+    /**
+     * Видаляє вагон за ID (програмний виклик, без консольного вводу).
+     * Призначений для виклику з UI через Command Pattern.
+     *
+     * @param id ідентифікатор вагону для видалення
+     */
+    public void vydalytyVagonById(int id) {
+        if (potiag.vydalytyVagon(id)) {
+            deleteFromRepository(id);
+            logger.info("Видалено вагон ID={} через програмний виклик", id);
+        } else {
+            logger.warn("Спроба видалити неіснуючий вагон ID={}", id);
+        }
+    }
+
     public void vydalytyVagon() {
         pokazatySklad();
         if (potiag.getSklad().isEmpty()) {

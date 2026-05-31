@@ -1,17 +1,26 @@
 package commands;
 
-import services.SkladService;
+import services.PotiagService;
 
+/**
+ * Команда для сортування вагонів за рівнем комфортності.
+ * Делегує виконання до {@link PotiagService} (Constructor Injection).
+ */
 public class SortVagonsCommand implements Command {
-    private SkladService service;
+    private final PotiagService service;
 
-    public SortVagonsCommand(SkladService service) {
+    /**
+     * Конструктор для GUI: делегує до PotiagService.
+     *
+     * @param service сервіс бізнес-логіки потяга
+     */
+    public SortVagonsCommand(PotiagService service) {
         this.service = service;
     }
 
     @Override
     public void execute() {
-        service.sortuvatyVagony();
+        service.sortuvatyZaKomfortom();
     }
 
     @Override

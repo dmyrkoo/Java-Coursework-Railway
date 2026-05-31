@@ -23,9 +23,7 @@
         <log4j2.version>2.20.0</log4j2.version>
         <sqlite.version>3.45.1.0</sqlite.version>
         <slf4j.version>2.0.12</slf4j.version>
-        <logback.version>1.5.3</logback.version>
-        <jakarta.mail.version>2.1.3</jakarta.mail.version>
-        <angus.mail.version>2.0.3</angus.mail.version>
+        <logback.version>1.3.14</logback.version>
         <javafx.version>17.0.10</javafx.version>
 
         <!-- Ініціалізація змінної argLine, щоб IDE не сварилася (вона наповнюється плагіном JaCoCo) -->
@@ -81,17 +79,11 @@
             <version>${log4j2.version}</version>
         </dependency>
 
-        <!-- 4. Jakarta Mail (Сумісність з Logback SMTPAppender) -->
+        <!-- 4. Sun Mail (Сумісність з Logback SMTPAppender) -->
         <dependency>
-            <groupId>jakarta.mail</groupId>
-            <artifactId>jakarta.mail-api</artifactId>
-            <version>${jakarta.mail.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.angus</groupId>
-            <artifactId>angus-mail</artifactId>
-            <version>${angus.mail.version}</version>
-            <scope>runtime</scope>
+            <groupId>com.sun.mail</groupId>
+            <artifactId>javax.mail</artifactId>
+            <version>1.6.2</version>
         </dependency>
 
         <!-- 5. SQLite JDBC (База даних) -->
@@ -123,6 +115,13 @@
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-fxml</artifactId>
             <version>${javafx.version}</version>
+        </dependency>
+
+        <!-- 8. AtlantaFX (Тема для JavaFX) -->
+        <dependency>
+            <groupId>io.github.mkpaz</groupId>
+            <artifactId>atlantafx-base</artifactId>
+            <version>2.0.1</version>
         </dependency>
     </dependencies>
 

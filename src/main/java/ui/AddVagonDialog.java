@@ -78,8 +78,7 @@ public class AddVagonDialog extends Dialog<Vagon> {
         pasazhyrskyBox.getChildren().addAll(
                 new Label("Клас комфорту:"), klasCombo,
                 new Label("Кількість пасажирів:"), pasazhyrivField,
-                new Label("Рівень обслуговування:"), rivenField
-        );
+                new Label("Рівень обслуговування:"), rivenField);
 
         // === Поля для службового вагону ===
         personalField = new TextField();
@@ -91,8 +90,7 @@ public class AddVagonDialog extends Dialog<Vagon> {
         slyzhbovyBox = new VBox(5);
         slyzhbovyBox.getChildren().addAll(
                 new Label("Кількість персоналу:"), personalField,
-                new Label("Тип призначення:"), pryznachennyaField
-        );
+                new Label("Тип призначення:"), pryznachennyaField);
 
         // === Компонування ===
         GridPane baseGrid = new GridPane();
@@ -102,7 +100,7 @@ public class AddVagonDialog extends Dialog<Vagon> {
 
         baseGrid.add(new Label("Тип вагону:"), 0, 0);
         baseGrid.add(typeCombo, 1, 0);
-        baseGrid.add(new Label("Комфортність:"), 0, 1);
+        baseGrid.add(new Label("Оснащеність:"), 0, 1);
         baseGrid.add(komfField, 1, 1);
         baseGrid.add(new Label("Кількість багажу:"), 0, 2);
         baseGrid.add(bagazhField, 1, 2);
@@ -148,11 +146,10 @@ public class AddVagonDialog extends Dialog<Vagon> {
             if ("Пасажирський".equals(typeCombo.getValue())) {
                 KlasKomfortu klas = klasCombo.getValue();
                 int pasazhyriv = parseIntField(pasazhyrivField, "Кількість пасажирів");
-                int riven = parseIntField(rivenField, "Рівень обслуговування");
+                int riven = parseIntField(rivenField, "Пакет послуг");
 
                 PasazhyrskyVagon vagon = new PasazhyrskyVagon(
-                        nextId, komf, bagazh, klas, pasazhyriv, riven
-                );
+                        nextId, komf, bagazh, klas, pasazhyriv, riven);
                 logger.info("Створено пасажирський вагон ID={} ({}, пасажирів: {})",
                         nextId, klas.name(), pasazhyriv);
                 return vagon;
@@ -166,8 +163,7 @@ public class AddVagonDialog extends Dialog<Vagon> {
                 }
 
                 SlyzhbovyVagon vagon = new SlyzhbovyVagon(
-                        nextId, komf, bagazh, personal, pryznachennya
-                );
+                        nextId, komf, bagazh, personal, pryznachennya);
                 logger.info("Створено службовий вагон ID={} (тип: {}, персонал: {})",
                         nextId, pryznachennya, personal);
                 return vagon;
