@@ -4,6 +4,7 @@ import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
 import model.*;
@@ -19,7 +20,10 @@ public class AddVagonDialog extends Dialog<Vagon> {
 
     private static final Logger logger = LoggerFactory.getLogger(AddVagonDialog.class);
 
-    private final ComboBox<String> typeCombo;
+    private final RadioButton rbPasazhyrsky;
+    private final RadioButton rbSlyzhbovy;
+    private final ToggleGroup typeGroup;
+
     private final TextField komfField;
     private final TextField bagazhField;
 
@@ -49,14 +53,27 @@ public class AddVagonDialog extends Dialog<Vagon> {
         setTitle("Додати вагон");
         setHeaderText("Введіть параметри нового вагону (ID: " + nextId + ")");
 
-        // Кнопки ОК та Скасувати
-        ButtonType okButtonType = new ButtonType("ОК", ButtonBar.ButtonData.OK_DONE);
+        // Кнопки Зберегти та Скасувати
+        ButtonType okButtonType = new ButtonType("Зберегти", ButtonBar.ButtonData.OK_DONE);
         ButtonType cancelButtonType = new ButtonType("Скасувати", ButtonBar.ButtonData.CANCEL_CLOSE);
         getDialogPane().getButtonTypes().addAll(okButtonType, cancelButtonType);
 
+        final Button btOk = (Button) getDialogPane().lookupButton(okButtonType);
+        btOk.addEventFilter(javafx.event.ActionEvent.ACTION, event -> {
+            if (!validateInput()) {
+                event.consume();
+            }
+        });
+
         // === Базові поля ===
-        typeCombo = new ComboBox<>(FXCollections.observableArrayList("Пасажирський", "Службовий"));
-        typeCombo.setValue("Пасажирський");
+        rbPasazhyrsky = new RadioButton("Пасажирський");
+        rbSlyzhbovy = new RadioButton("Службовий");
+        typeGroup = new ToggleGroup();
+        rbPasazhyrsky.setToggleGroup(typeGroup);
+        rbSlyzhbovy.setToggleGroup(typeGroup);
+        rbPasazhyrsky.setSelected(true);
+
+        HBox typeBox = new HBox(10, rbPasazhyrsky, rbSlyzhbovy);
 
         komfField = new TextField();
         komfField.setPromptText("1–10");
@@ -99,7 +116,7 @@ public class AddVagonDialog extends Dialog<Vagon> {
         baseGrid.setPadding(new Insets(10));
 
         baseGrid.add(new Label("Тип вагону:"), 0, 0);
-        baseGrid.add(typeCombo, 1, 0);
+        baseGrid.add(typeBox, 1, 0);
         baseGrid.add(new Label("Оснащеність:"), 0, 1);
         baseGrid.add(komfField, 1, 1);
         baseGrid.add(new Label("Кількість багажу:"), 0, 2);
@@ -110,18 +127,19 @@ public class AddVagonDialog extends Dialog<Vagon> {
         getDialogPane().setContent(content);
 
         // Динамічна зміна полів при зміні типу
-        typeCombo.setOnAction(e -> {
+        typeGroup.selectedToggleProperty().addListener((obs, oldVal, newVal) -> {
             content.getChildren().remove(pasazhyrskyBox);
             content.getChildren().remove(slyzhbovyBox);
 
-            if ("Пасажирський".equals(typeCombo.getValue())) {
+            if (rbPasazhyrsky.isSelected()) {
                 content.getChildren().add(pasazhyrskyBox);
             } else {
                 content.getChildren().add(slyzhbovyBox);
             }
+            getDialogPane().getScene().getWindow().sizeToScene();
         });
 
-        // ResultConverter — створення об'єкта при натисканні ОК
+        // ResultConverter — створення об'єкта при натисканні Зберегти
         setResultConverter(buttonType -> {
             if (buttonType == okButtonType) {
                 return createVagon();
@@ -134,65 +152,65 @@ public class AddVagonDialog extends Dialog<Vagon> {
     }
 
     /**
-     * Зчитує дані з полів, валідує та створює об'єкт вагону.
-     *
-     * @return створений {@link Vagon} або {@code null} при помилці валідації
+     * Валідує поля перед закриттям діалогу.
      */
-    private Vagon createVagon() {
+    private boolean validateInput() {
         try {
-            int komf = parseIntField(komfField, "Комфортність");
-            int bagazh = parseIntField(bagazhField, "Кількість багажу");
+            parseIntField(komfField, "Оснащеність");
+            parseIntField(bagazhField, "Кількість багажу");
 
-            if ("Пасажирський".equals(typeCombo.getValue())) {
-                KlasKomfortu klas = klasCombo.getValue();
-                int pasazhyriv = parseIntField(pasazhyrivField, "Кількість пасажирів");
-                int riven = parseIntField(rivenField, "Пакет послуг");
-
-                PasazhyrskyVagon vagon = new PasazhyrskyVagon(
-                        nextId, komf, bagazh, klas, pasazhyriv, riven);
-                logger.info("Створено пасажирський вагон ID={} ({}, пасажирів: {})",
-                        nextId, klas.name(), pasazhyriv);
-                return vagon;
-
+            if (rbPasazhyrsky.isSelected()) {
+                parseIntField(pasazhyrivField, "Кількість пасажирів");
+                parseIntField(rivenField, "Рівень обслуговування");
             } else {
-                int personal = parseIntField(personalField, "Кількість персоналу");
+                parseIntField(personalField, "Кількість персоналу");
                 String pryznachennya = pryznachennyaField.getText().trim();
                 if (pryznachennya.isEmpty()) {
                     showValidationError("Поле 'Тип призначення' не може бути порожнім.");
-                    return null;
+                    return false;
                 }
-
-                SlyzhbovyVagon vagon = new SlyzhbovyVagon(
-                        nextId, komf, bagazh, personal, pryznachennya);
-                logger.info("Створено службовий вагон ID={} (тип: {}, персонал: {})",
-                        nextId, pryznachennya, personal);
-                return vagon;
             }
-
+            return true;
         } catch (NumberFormatException e) {
-            // Повідомлення вже показано у parseIntField
-            logger.error("Некоректний ввід при створенні вагону", e);
-            return null;
-        } catch (Exception e) {
-            logger.error("Несподівана помилка при створенні вагону", e);
-            showValidationError("Несподівана помилка: " + e.getMessage());
-            return null;
+            return false;
         }
     }
 
     /**
-     * Парсить значення текстового поля як ціле число.
-     *
-     * @param field     текстове поле
-     * @param fieldName назва поля для повідомлення про помилку
-     * @return ціле число
-     * @throws NumberFormatException якщо значення не є числом
+     * Зчитує дані з полів та створює об'єкт вагону.
+     * (Викликається тільки якщо validateInput() повернув true)
      */
+    private Vagon createVagon() {
+        int komf = Integer.parseInt(komfField.getText().trim());
+        int bagazh = Integer.parseInt(bagazhField.getText().trim());
+
+        if (rbPasazhyrsky.isSelected()) {
+            KlasKomfortu klas = klasCombo.getValue();
+            int pasazhyriv = Integer.parseInt(pasazhyrivField.getText().trim());
+            int riven = Integer.parseInt(rivenField.getText().trim());
+
+            PasazhyrskyVagon vagon = new PasazhyrskyVagon(
+                    nextId, komf, bagazh, klas, pasazhyriv, riven);
+            logger.info("Створено пасажирський вагон ID={} ({}, пасажирів: {})",
+                    nextId, klas.name(), pasazhyriv);
+            return vagon;
+        } else {
+            int personal = Integer.parseInt(personalField.getText().trim());
+            String pryznachennya = pryznachennyaField.getText().trim();
+
+            SlyzhbovyVagon vagon = new SlyzhbovyVagon(
+                    nextId, komf, bagazh, personal, pryznachennya);
+            logger.info("Створено службовий вагон ID={} (тип: {}, персонал: {})",
+                    nextId, pryznachennya, personal);
+            return vagon;
+        }
+    }
+
     private int parseIntField(TextField field, String fieldName) {
         String text = field.getText().trim();
         if (text.isEmpty()) {
             showValidationError("Поле '" + fieldName + "' не може бути порожнім.");
-            throw new NumberFormatException("Порожнє поле: " + fieldName);
+            throw new NumberFormatException("Empty field");
         }
         try {
             return Integer.parseInt(text);
@@ -202,12 +220,9 @@ public class AddVagonDialog extends Dialog<Vagon> {
         }
     }
 
-    /**
-     * Показує повідомлення про помилку валідації.
-     */
     private void showValidationError(String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR, message);
-        alert.setTitle("Помилка введення");
+        alert.setTitle("Помилка валідації");
         alert.setHeaderText("Некоректні дані");
         alert.showAndWait();
     }

@@ -65,7 +65,7 @@ class PotiagServiceTest {
         potiag.dodatyVagon(vagonVip);       // komf=9
         potiag.dodatyVagon(vagonKupe);      // komf=7
 
-        service.sortuvatyZaKomfortom();
+        service.sortuvaty("За комфортністю");
 
         // Очікуваний порядок: VIP(9) -> KUPE(7) -> PLATSKART(5)
         assertEquals(3, potiag.getSklad().size());
@@ -83,7 +83,7 @@ class PotiagServiceTest {
         potiag.dodatyVagon(vagon2); // нижчий riven додаємо першим
         potiag.dodatyVagon(vagon1);
 
-        service.sortuvatyZaKomfortom();
+        service.sortuvaty("За комфортністю");
 
         // При однаковій комфортності: vagon1 (riven=9) перед vagon2 (riven=7)
         assertEquals(10, potiag.getSklad().get(0).getId());
@@ -96,7 +96,7 @@ class PotiagServiceTest {
         potiag.dodatyVagon(vagonVip);       // komf=9
         potiag.dodatyVagon(vagonPlatskart); // komf=5
 
-        service.sortuvatyZaKomfortom();
+        service.sortuvaty("За комфортністю");
 
         // Очікуваний порядок: VIP(9) -> Restoran(6) -> PLATSKART(5)
         assertEquals(1, potiag.getSklad().get(0).getId());
@@ -107,7 +107,7 @@ class PotiagServiceTest {
     @Test
     void testSortuvatyZaKomfortom_PorozhniySklad() {
         // Порожній склад — метод не повинен викликати помилку
-        service.sortuvatyZaKomfortom();
+        service.sortuvaty("За комфортністю");
 
         assertTrue(potiag.getSklad().isEmpty());
     }
@@ -116,7 +116,7 @@ class PotiagServiceTest {
     void testSortuvatyZaKomfortom_OdynVagon() {
         potiag.dodatyVagon(vagonVip);
 
-        service.sortuvatyZaKomfortom();
+        service.sortuvaty("За комфортністю");
 
         assertEquals(1, potiag.getSklad().size());
         assertEquals(1, potiag.getSklad().get(0).getId());
@@ -194,7 +194,7 @@ class PotiagServiceTest {
         // Перевірка що порожній потяг не змінює стан після сортування
         assertTrue(potiag.getSklad().isEmpty());
 
-        service.sortuvatyZaKomfortom();
+        service.sortuvaty("За комфортністю");
 
         assertTrue(potiag.getSklad().isEmpty());
         assertEquals(0, potiag.getZagalnaKilkistPasazhyriv());

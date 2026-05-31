@@ -11,11 +11,10 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
-
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import java.util.ArrayList;
 import commands.AddVagonCommand;
 import commands.DeleteVagonCommand;
 import commands.FindVagonsQuery;
@@ -58,6 +57,8 @@ public class MainApp extends Application {
 
     @Override
     public void start(Stage primaryStage) {
+        logger.error("ТЕСТОВЕ ПОВІДОМЛЕННЯ: Перевірка SMTP логера для курсової роботи",
+                new RuntimeException("Штучний збій для перевірки Email"));
         // Встановлення теми AtlantaFX
         Application.setUserAgentStylesheet(new atlantafx.base.theme.PrimerLight().getUserAgentStylesheet());
 
@@ -139,10 +140,10 @@ public class MainApp extends Application {
      * Створює рядок із 4 картками статистики.
      */
     private HBox createStatsRow() {
-        statPotiag = createStatCard("Потяг", potiag.getNazva());
-        statPasazhyry = createStatCard("Пасажири", String.valueOf(potiag.getZagalnaKilkistPasazhyriv()));
-        statBagazh = createStatCard("Багаж", String.valueOf(potiag.getZagalnyiBagazh()));
-        statVagoniv = createStatCard("Вагонів", String.valueOf(potiag.getSklad().size()));
+        statPotiag = createStatCard("🚆 Потяг", potiag.getNazva());
+        statPasazhyry = createStatCard("👥 Пасажири", String.valueOf(potiag.getZagalnaKilkistPasazhyriv()));
+        statBagazh = createStatCard("💼 Багаж", String.valueOf(potiag.getZagalnyiBagazh()));
+        statVagoniv = createStatCard("🚋 Вагони", String.valueOf(potiag.getSklad().size()));
 
         HBox row = new HBox(10, statPotiag, statPasazhyry, statBagazh, statVagoniv);
         row.setAlignment(Pos.CENTER_LEFT);
@@ -171,10 +172,10 @@ public class MainApp extends Application {
      * Оновлює значення на картках статистики.
      */
     private void refreshStats() {
-        statPotiag.setText("Потяг\n" + potiag.getNazva());
-        statPasazhyry.setText("Пасажири\n" + potiag.getZagalnaKilkistPasazhyriv());
-        statBagazh.setText("Багаж\n" + potiag.getZagalnyiBagazh());
-        statVagoniv.setText("Вагонів\n" + potiag.getSklad().size());
+        statPotiag.setText("🚆 Потяг\n" + potiag.getNazva());
+        statPasazhyry.setText("👥 Пасажири\n" + potiag.getZagalnaKilkistPasazhyriv());
+        statBagazh.setText("💼 Багаж\n" + potiag.getZagalnyiBagazh());
+        statVagoniv.setText("🚋 Вагонів\n" + potiag.getSklad().size());
     }
 
     /**
@@ -203,6 +204,8 @@ public class MainApp extends Application {
                 // Пасажирський — блакитний фон
                 wagonLabel.setStyle(
                         "-fx-background-color: #dbeafe;" +
+                                "-fx-text-fill: -color-fg-default;" +
+                                "-fx-font-weight: normal;" +
                                 "-fx-border-color: #93c5fd;" +
                                 "-fx-border-radius: 4;" +
                                 "-fx-background-radius: 4;" +
@@ -211,6 +214,8 @@ public class MainApp extends Application {
                 // Службовий — жовтий фон
                 wagonLabel.setStyle(
                         "-fx-background-color: #fef9c3;" +
+                                "-fx-text-fill: -color-fg-default;" +
+                                "-fx-font-weight: normal;" +
                                 "-fx-border-color: #fde047;" +
                                 "-fx-border-radius: 4;" +
                                 "-fx-background-radius: 4;" +
@@ -258,6 +263,17 @@ public class MainApp extends Application {
         });
         pasCol.setPrefWidth(90);
 
+        // 4.5 Персонал
+        TableColumn<Vagon, String> personalCol = new TableColumn<>("Персонал");
+        personalCol.setCellValueFactory(data -> {
+            Vagon v = data.getValue();
+            if (v instanceof SlyzhbovyVagon sv) {
+                return new ReadOnlyObjectWrapper<>(String.valueOf(sv.getPersonalKilkist()));
+            }
+            return new ReadOnlyObjectWrapper<>("-");
+        });
+        personalCol.setPrefWidth(90);
+
         // 5. Багаж
         TableColumn<Vagon, Integer> bagCol = new TableColumn<>("Багаж");
         bagCol.setCellValueFactory(data -> new ReadOnlyObjectWrapper<>(data.getValue().getBagazhKilkist()));
@@ -268,7 +284,7 @@ public class MainApp extends Application {
         klasCol.setCellValueFactory(data -> {
             Vagon v = data.getValue();
             if (v instanceof PasazhyrskyVagon pv) {
-                return new ReadOnlyObjectWrapper<>(pv.getKlasKomfortu().name());
+                return new ReadOnlyObjectWrapper<>(pv.getKlasKomfortu().getDisplayName());
             }
             return new ReadOnlyObjectWrapper<>("-");
         });
@@ -285,7 +301,7 @@ public class MainApp extends Application {
         });
         pryzCol.setPrefWidth(120);
 
-        table.getColumns().addAll(idCol, typeCol, komfCol, pasCol, bagCol, klasCol, pryzCol);
+        table.getColumns().addAll(idCol, typeCol, komfCol, pasCol, personalCol, bagCol, klasCol, pryzCol);
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         table.setPlaceholder(new Label("Склад порожній — додайте вагон"));
 
@@ -309,18 +325,34 @@ public class MainApp extends Application {
             boolean isSelected = (selected != null && v.getId() == selected.getId());
 
             if (isSelected) {
-                // Підсвічений стиль — яскравий обвід
-                lbl.setStyle(
-                        "-fx-background-color: #bfdbfe;" +
-                                "-fx-border-color: #2563eb;" +
-                                "-fx-border-radius: 4;" +
-                                "-fx-background-radius: 4;" +
-                                "-fx-border-width: 2.5;");
+                if (v instanceof PasazhyrskyVagon) {
+                    // Пасажирський — яскравий синій
+                    lbl.setStyle(
+                            "-fx-background-color: #007BFF;" +
+                                    "-fx-text-fill: white;" +
+                                    "-fx-font-weight: bold;" +
+                                    "-fx-border-color: #0056b3;" +
+                                    "-fx-border-radius: 4;" +
+                                    "-fx-background-radius: 4;" +
+                                    "-fx-border-width: 2.5;");
+                } else {
+                    // Службовий — яскравий жовтий
+                    lbl.setStyle(
+                            "-fx-background-color: #FFD700;" +
+                                    "-fx-text-fill: black;" +
+                                    "-fx-font-weight: bold;" +
+                                    "-fx-border-color: #B8860B;" +
+                                    "-fx-border-radius: 4;" +
+                                    "-fx-background-radius: 4;" +
+                                    "-fx-border-width: 2.5;");
+                }
             } else {
                 // Повернення до звичайного стилю
                 if (v instanceof PasazhyrskyVagon) {
                     lbl.setStyle(
                             "-fx-background-color: #dbeafe;" +
+                                    "-fx-text-fill: -color-fg-default;" +
+                                    "-fx-font-weight: normal;" +
                                     "-fx-border-color: #93c5fd;" +
                                     "-fx-border-radius: 4;" +
                                     "-fx-background-radius: 4;" +
@@ -328,6 +360,8 @@ public class MainApp extends Application {
                 } else {
                     lbl.setStyle(
                             "-fx-background-color: #fef9c3;" +
+                                    "-fx-text-fill: -color-fg-default;" +
+                                    "-fx-font-weight: normal;" +
                                     "-fx-border-color: #fde047;" +
                                     "-fx-border-radius: 4;" +
                                     "-fx-background-radius: 4;" +
@@ -350,10 +384,14 @@ public class MainApp extends Application {
         Button deleteBtn = new Button("Видалити");
         deleteBtn.setOnAction(e -> onVydalyty());
 
-        Button sortBtn = new Button("Сортувати");
-        sortBtn.setOnAction(e -> onSortuvaty());
+        ComboBox<String> sortCombo = new ComboBox<>(FXCollections.observableArrayList(
+                "За комфортністю", "За пасажирами", "За багажем"));
+        sortCombo.setValue("За комфортністю");
 
-        HBox leftBox = new HBox(8, addBtn, deleteBtn, sortBtn);
+        Button sortBtn = new Button("Сортувати");
+        sortBtn.setOnAction(e -> onSortuvaty(sortCombo.getValue()));
+
+        HBox leftBox = new HBox(8, addBtn, deleteBtn, sortCombo, sortBtn);
         leftBox.setAlignment(Pos.CENTER_LEFT);
 
         // Права частина — пошук за місткістю
@@ -442,7 +480,7 @@ public class MainApp extends Application {
         try {
             Vagon selected = tableView.getSelectionModel().getSelectedItem();
             if (selected == null) {
-                showWarning("Оберіть вагон для видалення.");
+                showWarning("Будь ласка, оберіть вагон для видалення");
                 return;
             }
 
@@ -469,11 +507,11 @@ public class MainApp extends Application {
         }
     }
 
-    private void onSortuvaty() {
+    private void onSortuvaty(String criterion) {
         try {
-            new SortVagonsCommand(potiagService).execute();
+            new SortVagonsCommand(potiagService, criterion).execute();
             refreshTable();
-            logger.info("Виконано сортування за комфортністю");
+            logger.info("Виконано сортування: {}", criterion);
         } catch (Exception e) {
             logger.error("Помилка сортування вагонів", e);
             showWarning("Не вдалося виконати сортування: " + e.getMessage());
@@ -486,7 +524,7 @@ public class MainApp extends Application {
             String maxStr = maxField.getText().trim();
 
             if (minStr.isEmpty() || maxStr.isEmpty()) {
-                showWarning("Введіть значення min та max.");
+                showError("Будь ласка, введіть коректні числові значення для місткості");
                 return;
             }
 
@@ -500,10 +538,10 @@ public class MainApp extends Application {
             logger.info("Пошук: знайдено {} вагонів у діапазоні {}-{}", result.size(), min, max);
         } catch (NumberFormatException ex) {
             logger.error("Некоректний ввід при пошуку вагонів", ex);
-            showWarning("Введіть коректні числа.");
+            showError("Будь ласка, введіть коректні числові значення для місткості");
         } catch (Exception e) {
             logger.error("Помилка при пошуку вагонів через UI", e);
-            showWarning("Не вдалося виконати пошук: " + e.getMessage());
+            showError("Не вдалося виконати пошук: " + e.getMessage());
         }
     }
 
@@ -518,16 +556,16 @@ public class MainApp extends Application {
         refreshStats();
     }
 
-    private void showInfo(String message) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION, message);
-        alert.setTitle("Інформація");
+    private void showWarning(String message) {
+        Alert alert = new Alert(Alert.AlertType.WARNING, message);
+        alert.setTitle("Увага");
         alert.setHeaderText(null);
         alert.showAndWait();
     }
 
-    private void showWarning(String message) {
-        Alert alert = new Alert(Alert.AlertType.WARNING, message);
-        alert.setTitle("Увага");
+    private void showError(String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR, message);
+        alert.setTitle("Помилка");
         alert.setHeaderText(null);
         alert.showAndWait();
     }

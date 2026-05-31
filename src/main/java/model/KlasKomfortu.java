@@ -1,17 +1,34 @@
-// KlasKomfortu.java
 package model;
 
 public enum KlasKomfortu {
-    VIP,
-    KUPE,
-    PLATSKART,
-    ZAHALNYI;
+    VIP("ВІП"),
+    KUPE("Купе"),
+    PLATSKART("Плацкарт"),
+    ZAHALNYI("Загальний");
+
+    private final String displayName;
+
+    KlasKomfortu(String displayName) {
+        this.displayName = displayName;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    @Override
+    public String toString() {
+        return displayName;
+    }
 
     public static KlasKomfortu fromString(String str) {
-        try {
-            return KlasKomfortu.valueOf(str.trim().toUpperCase());
-        } catch (IllegalArgumentException e) {
-            return ZAHALNYI;
+        if (str == null) return ZAHALNYI;
+        String normalized = str.trim();
+        for (KlasKomfortu klas : values()) {
+            if (klas.name().equalsIgnoreCase(normalized) || klas.getDisplayName().equalsIgnoreCase(normalized)) {
+                return klas;
+            }
         }
+        return ZAHALNYI;
     }
 }

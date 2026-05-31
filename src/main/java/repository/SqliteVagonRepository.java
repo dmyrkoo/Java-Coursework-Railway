@@ -70,27 +70,25 @@ public class SqliteVagonRepository implements VagonRepository {
         }
     }
 
-    /**
-     * Заповнює таблицю тестовими даними, якщо вона порожня.
-     * Додає 6 вагонів: 3 пасажирських та 3 службових із різними характеристиками.
-     */
     private void seedDataIfEmpty() {
-        String sql = "SELECT COUNT(*) FROM vagons";
+        String countSql = "SELECT COUNT(*) FROM vagons";
+        String insertSql = """
+                INSERT INTO vagons (id, type, komfortnist, bagazh_kilkist, klas_komfortu, kilkist_pasazhyriv, riven_obslugovuvannya, personal_kilkist, typ_pryznachennya)
+                VALUES 
+                (1, 'Pasazhyrsky', 8, 40, 'VIP', 20, 10, NULL, NULL),
+                (2, 'Pasazhyrsky', 6, 60, 'KUPE', 36, 7, NULL, NULL),
+                (3, 'Pasazhyrsky', 3, 80, 'PLATSKART', 54, 3, NULL, NULL),
+                (4, 'Slyzhbovy', 7, 150, NULL, NULL, NULL, 5, 'Ресторан'),
+                (5, 'Slyzhbovy', 4, 500, NULL, NULL, NULL, 2, 'Багажний')
+                """;
 
         try (Statement stmt = connection.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
+             ResultSet rs = stmt.executeQuery(countSql)) {
 
             if (rs.next() && rs.getInt(1) == 0) {
                 logger.info("Таблиця 'vagons' порожня — додаємо тестові дані");
-
-                saveVagon(new PasazhyrskyVagon(1, 9, 40, KlasKomfortu.VIP, 20, 10));
-                saveVagon(new PasazhyrskyVagon(2, 7, 60, KlasKomfortu.KUPE, 36, 7));
-                saveVagon(new PasazhyrskyVagon(3, 4, 80, KlasKomfortu.PLATSKART, 54, 3));
-                saveVagon(new SlyzhbovyVagon(4, 5, 100, 8, "Поштовий"));
-                saveVagon(new SlyzhbovyVagon(5, 6, 50, 4, "Багажний"));
-                saveVagon(new SlyzhbovyVagon(6, 3, 120, 12, "Ресторан"));
-
-                logger.info("Додано 6 тестових вагонів");
+                stmt.executeUpdate(insertSql);
+                logger.info("Додано 5 тестових вагонів через SQL INSERT");
             }
         } catch (SQLException e) {
             logger.error("Помилка перевірки/заповнення тестових даних", e);
