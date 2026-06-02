@@ -36,6 +36,9 @@ public class PotiagService {
         }
 
         switch (criterion) {
+            case "За ID":
+                sklad.sort(Comparator.comparingInt(Vagon::getId));
+                break;
             case "За комфортністю":
                 sklad.sort(Comparator
                         .comparingInt(Vagon::getKomfortnist).reversed()

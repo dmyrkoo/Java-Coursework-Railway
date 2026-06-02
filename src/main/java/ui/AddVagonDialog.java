@@ -102,7 +102,7 @@ public class AddVagonDialog extends Dialog<Vagon> {
         personalField.setPromptText("Кількість");
 
         pryznachennyaField = new TextField();
-        pryznachennyaField.setPromptText("Restoran, Poshta...");
+        pryznachennyaField.setPromptText("Ресторан, Пошта...");
 
         slyzhbovyBox = new VBox(5);
         slyzhbovyBox.getChildren().addAll(

@@ -394,17 +394,17 @@ public class MainApp extends Application {
         deleteBtn.setOnAction(e -> onVydalyty());
 
         ComboBox<String> sortCombo = new ComboBox<>(FXCollections.observableArrayList(
-                "За комфортністю", "За пасажирами", "За багажем"));
-        sortCombo.setValue("За комфортністю");
+                "За ID", "За комфортністю", "За пасажирами", "За багажем"));
+        sortCombo.setValue("За ID");
 
         Button sortBtn = new Button("Сортувати");
         sortBtn.setOnAction(e -> onSortuvaty(sortCombo.getValue()));
 
-        HBox leftBox = new HBox(8, addBtn, deleteBtn, sortCombo, sortBtn);
+        HBox leftBox = new HBox(8, addBtn, deleteBtn, sortBtn, sortCombo);
         leftBox.setAlignment(Pos.CENTER_LEFT);
 
         // Права частина — пошук за місткістю
-        Label labelMist = new Label("Місткість:");
+        Label labelMist = new Label("Пасажиромісткість:");
         labelMist.setPadding(new Insets(0, 4, 0, 0));
 
         TextField minField = new TextField();
