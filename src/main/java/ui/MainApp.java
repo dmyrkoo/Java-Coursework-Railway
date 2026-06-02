@@ -57,8 +57,9 @@ public class MainApp extends Application {
 
     @Override
     public void start(Stage primaryStage) {
-        logger.error("ТЕСТОВЕ ПОВІДОМЛЕННЯ: Перевірка SMTP логера для курсової роботи",
-                new RuntimeException("Штучний збій для перевірки Email"));
+        // logger.error("ТЕСТОВЕ ПОВІДОМЛЕННЯ: Перевірка SMTP логера для курсової
+        // роботи",
+        // new RuntimeException("Штучний збій для перевірки Email"));
         // Встановлення теми AtlantaFX
         Application.setUserAgentStylesheet(new atlantafx.base.theme.PrimerLight().getUserAgentStylesheet());
 
@@ -244,7 +245,15 @@ public class MainApp extends Application {
 
         // 2. Тип
         TableColumn<Vagon, String> typeCol = new TableColumn<>("Тип");
-        typeCol.setCellValueFactory(data -> new ReadOnlyObjectWrapper<>(data.getValue().getType()));
+        typeCol.setCellValueFactory(data -> {
+            Vagon v = data.getValue();
+            if (v instanceof PasazhyrskyVagon) {
+                return new ReadOnlyObjectWrapper<>("Пасажирський");
+            } else if (v instanceof SlyzhbovyVagon) {
+                return new ReadOnlyObjectWrapper<>("Службовий");
+            }
+            return new ReadOnlyObjectWrapper<>(v.getType());
+        });
         typeCol.setPrefWidth(110);
 
         // 3. Комфортність
