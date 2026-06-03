@@ -59,6 +59,7 @@ public class AddVagonDialog extends Dialog<Vagon> {
         getDialogPane().getButtonTypes().addAll(okButtonType, cancelButtonType);
 
         final Button btOk = (Button) getDialogPane().lookupButton(okButtonType);
+        btOk.getStyleClass().add(atlantafx.base.theme.Styles.ACCENT);
         btOk.addEventFilter(javafx.event.ActionEvent.ACTION, event -> {
             if (!validateInput()) {
                 event.consume();
@@ -77,21 +78,26 @@ public class AddVagonDialog extends Dialog<Vagon> {
 
         komfField = new TextField();
         komfField.setPromptText("1–10");
+        komfField.setPrefHeight(32);
 
         bagazhField = new TextField();
-        bagazhField.setPromptText("Кількість одиниць");
+        bagazhField.setPromptText("Наприклад: 50");
+        bagazhField.setPrefHeight(32);
 
         // === Поля для пасажирського вагону ===
         pasazhyrivField = new TextField();
-        pasazhyrivField.setPromptText("Кількість");
+        pasazhyrivField.setPromptText("Наприклад: 36");
+        pasazhyrivField.setPrefHeight(32);
 
         rivenField = new TextField();
         rivenField.setPromptText("1–10");
+        rivenField.setPrefHeight(32);
 
         klasCombo = new ComboBox<>(FXCollections.observableArrayList(KlasKomfortu.values()));
         klasCombo.setValue(KlasKomfortu.KUPE);
+        klasCombo.setPrefHeight(32);
 
-        pasazhyrskyBox = new VBox(5);
+        pasazhyrskyBox = new VBox(10);
         pasazhyrskyBox.getChildren().addAll(
                 new Label("Клас комфорту:"), klasCombo,
                 new Label("Кількість пасажирів:"), pasazhyrivField,
@@ -99,21 +105,23 @@ public class AddVagonDialog extends Dialog<Vagon> {
 
         // === Поля для службового вагону ===
         personalField = new TextField();
-        personalField.setPromptText("Кількість");
+        personalField.setPromptText("Наприклад: 2");
+        personalField.setPrefHeight(32);
 
         pryznachennyaField = new TextField();
         pryznachennyaField.setPromptText("Ресторан, Пошта...");
+        pryznachennyaField.setPrefHeight(32);
 
-        slyzhbovyBox = new VBox(5);
+        slyzhbovyBox = new VBox(10);
         slyzhbovyBox.getChildren().addAll(
                 new Label("Кількість персоналу:"), personalField,
                 new Label("Тип призначення:"), pryznachennyaField);
 
         // === Компонування ===
         GridPane baseGrid = new GridPane();
-        baseGrid.setHgap(10);
-        baseGrid.setVgap(8);
-        baseGrid.setPadding(new Insets(10));
+        baseGrid.setHgap(15);
+        baseGrid.setVgap(15);
+        baseGrid.setPadding(new Insets(20));
 
         baseGrid.add(new Label("Тип вагону:"), 0, 0);
         baseGrid.add(typeBox, 1, 0);
@@ -156,14 +164,35 @@ public class AddVagonDialog extends Dialog<Vagon> {
      */
     private boolean validateInput() {
         try {
-            parseIntField(komfField, "Оснащеність");
-            parseIntField(bagazhField, "Кількість багажу");
+            int komf = parseIntField(komfField, "Оснащеність");
+            if (komf < 1 || komf > 10) {
+                showValidationError("Оснащеність повинна бути від 1 до 10.");
+                return false;
+            }
+
+            int bagazh = parseIntField(bagazhField, "Кількість багажу");
+            if (bagazh < 0) {
+                showValidationError("Кількість багажу не може бути меншою за 0.");
+                return false;
+            }
 
             if (rbPasazhyrsky.isSelected()) {
-                parseIntField(pasazhyrivField, "Кількість пасажирів");
+                if (klasCombo.getValue() == null) {
+                    showValidationError("Оберіть клас комфорту.");
+                    return false;
+                }
+                int pas = parseIntField(pasazhyrivField, "Кількість пасажирів");
+                if (pas <= 0) {
+                    showValidationError("Кількість пасажирів повинна бути більшою за 0.");
+                    return false;
+                }
                 parseIntField(rivenField, "Рівень обслуговування");
             } else {
-                parseIntField(personalField, "Кількість персоналу");
+                int pers = parseIntField(personalField, "Кількість персоналу");
+                if (pers <= 0) {
+                    showValidationError("Кількість персоналу повинна бути більшою за 0.");
+                    return false;
+                }
                 String pryznachennya = pryznachennyaField.getText().trim();
                 if (pryznachennya.isEmpty()) {
                     showValidationError("Поле 'Тип призначення' не може бути порожнім.");

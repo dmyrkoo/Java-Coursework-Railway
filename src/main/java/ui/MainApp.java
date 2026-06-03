@@ -49,11 +49,13 @@ public class MainApp extends Application {
     /** Список Label-ів вагонів у схемі для підсвітки при виділенні */
     private final List<Label> trainWagonLabels = new ArrayList<>();
 
-    /** Картки статистики (для оновлення) */
-    private Label statPotiag;
-    private Label statPasazhyry;
-    private Label statBagazh;
-    private Label statVagoniv;
+    /** Значення статистики (для оновлення) */
+    private Label valPasazhyry;
+    private Label valBagazh;
+    private Label valVagoniv;
+
+    /** Статус-рядок */
+    private Label statusLeftLabel;
 
     @Override
     public void start(Stage primaryStage) {
@@ -98,8 +100,9 @@ public class MainApp extends Application {
         tableView = createTableView();
         root.setCenter(tableView);
 
-        // BOTTOM: Тулбар з кнопками та пошуком
-        root.setBottom(createBottomToolbar());
+        // BOTTOM: Тулбар з кнопками та пошуком + Статус-рядок
+        VBox bottomBox = new VBox(0, createBottomToolbar(), createStatusBar());
+        root.setBottom(bottomBox);
 
         Scene scene = new Scene(root, 1000, 650);
         primaryStage.setTitle("Потяг — " + potiag.getNazva());
@@ -121,8 +124,17 @@ public class MainApp extends Application {
      * Створює верхню частину: картки статистики + візуальна схема потяга.
      */
     private VBox createTopSection() {
-        VBox topBox = new VBox(10);
-        topBox.setPadding(new Insets(0, 0, 10, 0));
+        VBox topBox = new VBox(15);
+        topBox.setPadding(new Insets(10, 0, 15, 0));
+
+        // Заголовок
+        Label titleLabel = new Label("Lviv–Kyiv Express");
+        titleLabel.setStyle("-fx-font-size: 24px; -fx-font-weight: bold;");
+        
+        Label subtitleLabel = new Label("Загальна інформація про потяг");
+        subtitleLabel.setStyle("-fx-text-fill: gray; -fx-font-size: 14px;");
+        
+        VBox headerBox = new VBox(2, titleLabel, subtitleLabel);
 
         // Рядок карток статистики
         HBox statsRow = createStatsRow();
@@ -133,39 +145,47 @@ public class MainApp extends Application {
         trainSchemaBox.setPadding(new Insets(6, 0, 4, 0));
         refreshTrainSchema();
 
-        topBox.getChildren().addAll(statsRow, trainSchemaBox);
+        topBox.getChildren().addAll(headerBox, statsRow, trainSchemaBox);
         return topBox;
     }
 
     /**
-     * Створює рядок із 4 картками статистики.
+     * Створює рядок із картками статистики.
      */
     private HBox createStatsRow() {
-        statPotiag = createStatCard("🚆 Потяг", potiag.getNazva());
-        statPasazhyry = createStatCard("👥 Пасажири", String.valueOf(potiag.getZagalnaKilkistPasazhyriv()));
-        statBagazh = createStatCard("💼 Багаж", String.valueOf(potiag.getZagalnyiBagazh()));
-        statVagoniv = createStatCard("🚋 Вагони", String.valueOf(potiag.getSklad().size()));
+        valPasazhyry = new Label(String.valueOf(potiag.getZagalnaKilkistPasazhyriv()));
+        valBagazh = new Label(String.valueOf(potiag.getZagalnyiBagazh()));
+        valVagoniv = new Label(String.valueOf(potiag.getSklad().size()));
 
-        HBox row = new HBox(10, statPotiag, statPasazhyry, statBagazh, statVagoniv);
+        VBox cardVagoniv = createStatCard("🚋 Вагони", valVagoniv);
+        VBox cardPasazhyry = createStatCard("👥 Пасажири", valPasazhyry);
+        VBox cardBagazh = createStatCard("💼 Багаж", valBagazh);
+
+        HBox row = new HBox(15, cardVagoniv, cardPasazhyry, cardBagazh);
         row.setAlignment(Pos.CENTER_LEFT);
         return row;
     }
 
     /**
-     * Створює одну картку статистики (стилізований Label).
+     * Створює одну картку статистики (VBox).
      */
-    private Label createStatCard(String title, String value) {
-        Label card = new Label(title + "\n" + value);
-        card.setFont(Font.font("System", 13));
-        card.setPadding(new Insets(10, 20, 10, 20));
-        card.setStyle(
-                "-fx-background-color: #f6f8fa;" +
-                        "-fx-border-color: #d0d7de;" +
-                        "-fx-border-radius: 6;" +
-                        "-fx-background-radius: 6;" +
-                        "-fx-border-width: 1;");
-        card.setMinWidth(140);
+    private VBox createStatCard(String title, Label valueLabel) {
+        Label titleLabel = new Label(title);
+        titleLabel.setStyle("-fx-text-fill: gray; -fx-font-size: 13px;");
+        
+        valueLabel.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
+
+        VBox card = new VBox(5, titleLabel, valueLabel);
+        card.setPadding(new Insets(15));
+        card.setMinWidth(120);
+        card.setMaxWidth(Double.MAX_VALUE);
+        HBox.setHgrow(card, Priority.ALWAYS);
         card.setAlignment(Pos.CENTER);
+        card.setStyle(
+                "-fx-background-color: white;" +
+                "-fx-background-radius: 8px;" +
+                "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 5, 0, 0, 2);"
+        );
         return card;
     }
 
@@ -173,10 +193,11 @@ public class MainApp extends Application {
      * Оновлює значення на картках статистики.
      */
     private void refreshStats() {
-        statPotiag.setText("🚆 Потяг\n" + potiag.getNazva());
-        statPasazhyry.setText("👥 Пасажири\n" + potiag.getZagalnaKilkistPasazhyriv());
-        statBagazh.setText("💼 Багаж\n" + potiag.getZagalnyiBagazh());
-        statVagoniv.setText("🚋 Вагонів\n" + potiag.getSklad().size());
+        if (valPasazhyry != null) {
+            valPasazhyry.setText(String.valueOf(potiag.getZagalnaKilkistPasazhyriv()));
+            valBagazh.setText(String.valueOf(potiag.getZagalnyiBagazh()));
+            valVagoniv.setText(String.valueOf(potiag.getSklad().size()));
+        }
     }
 
     /**
@@ -203,28 +224,53 @@ public class MainApp extends Application {
 
             if (v instanceof PasazhyrskyVagon) {
                 // Пасажирський — блакитний фон
-                wagonLabel.setStyle(
-                        "-fx-background-color: #dbeafe;" +
+                String style = "-fx-background-color: #dbeafe;" +
                                 "-fx-text-fill: -color-fg-default;" +
                                 "-fx-font-weight: normal;" +
                                 "-fx-border-color: #93c5fd;" +
                                 "-fx-border-radius: 4;" +
                                 "-fx-background-radius: 4;" +
-                                "-fx-border-width: 1;");
+                                "-fx-border-width: 1;";
+                wagonLabel.setStyle(style);
+                wagonLabel.setUserData(style);
             } else {
                 // Службовий — жовтий фон
-                wagonLabel.setStyle(
-                        "-fx-background-color: #fef9c3;" +
+                String style = "-fx-background-color: #fef9c3;" +
                                 "-fx-text-fill: -color-fg-default;" +
                                 "-fx-font-weight: normal;" +
                                 "-fx-border-color: #fde047;" +
                                 "-fx-border-radius: 4;" +
                                 "-fx-background-radius: 4;" +
-                                "-fx-border-width: 1;");
+                                "-fx-border-width: 1;";
+                wagonLabel.setStyle(style);
+                wagonLabel.setUserData(style);
             }
 
             trainWagonLabels.add(wagonLabel);
             trainSchemaBox.getChildren().add(wagonLabel);
+        }
+    }
+
+    /**
+     * Підсвічує обраний вагон на візуальній схемі.
+     */
+    private void highlightWagonOnSchema(Vagon selectedVagon) {
+        if (trainSchemaBox == null) return;
+
+        for (var node : trainSchemaBox.getChildren()) {
+            if (node instanceof Label label) {
+                if (selectedVagon == null) {
+                    label.setEffect(null);
+                } else if (label.getText().contains(String.valueOf(selectedVagon.getId()))) {
+                    javafx.scene.effect.DropShadow shadow = new javafx.scene.effect.DropShadow();
+                    shadow.setColor(javafx.scene.paint.Color.web("#0969da"));
+                    shadow.setRadius(10);
+                    shadow.setSpread(0.5);
+                    label.setEffect(shadow);
+                } else {
+                    label.setEffect(null);
+                }
+            }
         }
     }
 
@@ -237,6 +283,10 @@ public class MainApp extends Application {
     @SuppressWarnings("unchecked")
     private TableView<Vagon> createTableView() {
         TableView<Vagon> table = new TableView<>(vagonList);
+
+        table.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> { 
+            highlightWagonOnSchema(newSelection); 
+        });
 
         // 1. ID
         TableColumn<Vagon, Integer> idCol = new TableColumn<>("ID");
@@ -255,6 +305,7 @@ public class MainApp extends Application {
             return new ReadOnlyObjectWrapper<>(v.getType());
         });
         typeCol.setPrefWidth(110);
+        typeCol.setMinWidth(120);
 
         // 3. Комфортність
         TableColumn<Vagon, Integer> komfCol = new TableColumn<>("Комфортність");
@@ -297,7 +348,33 @@ public class MainApp extends Application {
             }
             return new ReadOnlyObjectWrapper<>("-");
         });
+        klasCol.setCellFactory(column -> new TableCell<Vagon, String>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    setGraphic(null);
+                } else if (item.equals("-")) {
+                    setText("-");
+                    setGraphic(null);
+                } else {
+                    Label badge = new Label(item);
+                    String bgColor = switch (item) {
+                        case "ВІП" -> "#d9a05b";
+                        case "Купе" -> "#2ea44f";
+                        default -> "#6e7781";
+                    };
+                    badge.setStyle("-fx-padding: 3 8 3 8; -fx-background-radius: 10px; " +
+                                   "-fx-font-weight: bold; -fx-text-fill: white; " +
+                                   "-fx-background-color: " + bgColor + ";");
+                    setGraphic(badge);
+                    setText(null);
+                }
+            }
+        });
         klasCol.setPrefWidth(100);
+        klasCol.setMinWidth(120);
 
         // 7. Призначення (для службових)
         TableColumn<Vagon, String> pryzCol = new TableColumn<>("Призначення");
@@ -309,10 +386,15 @@ public class MainApp extends Application {
             return new ReadOnlyObjectWrapper<>("-");
         });
         pryzCol.setPrefWidth(120);
+        pryzCol.setMinWidth(120);
 
         table.getColumns().addAll(idCol, typeCol, komfCol, pasCol, personalCol, bagCol, klasCol, pryzCol);
+        table.getColumns().forEach(col -> col.setSortable(false));
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-        table.setPlaceholder(new Label("Склад порожній — додайте вагон"));
+        table.getStyleClass().addAll(atlantafx.base.theme.Styles.STRIPED, atlantafx.base.theme.Styles.INTERACTIVE);
+        Label placeholder = new Label("Немає вагонів для відображення");
+        placeholder.setStyle("-fx-text-fill: gray; -fx-font-size: 14px;");
+        table.setPlaceholder(placeholder);
 
         // Слухач виділення — підсвітка вагону у схемі потяга
         table.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
@@ -382,62 +464,98 @@ public class MainApp extends Application {
 
     // ========== Побудова BOTTOM секції ==========
 
-    /**
-     * Створює нижній тулбар: кнопки зліва + поля пошуку справа.
-     */
     private HBox createBottomToolbar() {
-        // Ліва частина — основні кнопки
+        // Загальна висота елементів
+        final double PREF_HEIGHT = 32.0;
+
+        // Ліва група — основні кнопки
         Button addBtn = new Button("Додати вагон");
+        addBtn.setPrefHeight(PREF_HEIGHT);
+        addBtn.getStyleClass().add(atlantafx.base.theme.Styles.ACCENT);
         addBtn.setOnAction(e -> onDodaty());
 
         Button deleteBtn = new Button("Видалити");
+        deleteBtn.setPrefHeight(PREF_HEIGHT);
+        deleteBtn.getStyleClass().add(atlantafx.base.theme.Styles.DANGER);
         deleteBtn.setOnAction(e -> onVydalyty());
+
+        HBox leftBox = new HBox(10, addBtn, deleteBtn);
+        leftBox.setAlignment(Pos.CENTER_LEFT);
+
+        // Центральна група — сортування
+        Label sortLabel = new Label("Сортування:");
+        sortLabel.setPrefHeight(PREF_HEIGHT);
+        sortLabel.setAlignment(Pos.CENTER);
 
         ComboBox<String> sortCombo = new ComboBox<>(FXCollections.observableArrayList(
                 "За ID", "За комфортністю", "За пасажирами", "За багажем"));
         sortCombo.setValue("За ID");
+        sortCombo.setPrefHeight(PREF_HEIGHT);
+        sortCombo.setPrefWidth(160);
 
         Button sortBtn = new Button("Сортувати");
+        sortBtn.setPrefHeight(PREF_HEIGHT);
         sortBtn.setOnAction(e -> onSortuvaty(sortCombo.getValue()));
 
-        HBox leftBox = new HBox(8, addBtn, deleteBtn, sortBtn, sortCombo);
-        leftBox.setAlignment(Pos.CENTER_LEFT);
+        HBox centerBox = new HBox(10, sortLabel, sortCombo, sortBtn);
+        centerBox.setAlignment(Pos.CENTER);
 
-        // Права частина — пошук за місткістю
+        // Права група — пошук за місткістю
         Label labelMist = new Label("Пасажиромісткість:");
+        labelMist.setPrefHeight(PREF_HEIGHT);
+        labelMist.setAlignment(Pos.CENTER_RIGHT);
         labelMist.setPadding(new Insets(0, 4, 0, 0));
 
         TextField minField = new TextField();
         minField.setPromptText("min");
         minField.setPrefWidth(60);
+        minField.setPrefHeight(PREF_HEIGHT);
 
         TextField maxField = new TextField();
         maxField.setPromptText("max");
         maxField.setPrefWidth(60);
+        maxField.setPrefHeight(PREF_HEIGHT);
 
         Button findBtn = new Button("Знайти");
+        findBtn.setPrefHeight(PREF_HEIGHT);
         findBtn.setOnAction(e -> onZnayty(minField, maxField));
 
         Button resetBtn = new Button("Скинути");
+        resetBtn.setPrefHeight(PREF_HEIGHT);
         resetBtn.setOnAction(e -> {
             minField.clear();
             maxField.clear();
             refreshTable();
+            if (statusLeftLabel != null) statusLeftLabel.setText("Фільтри скинуто, відображено весь склад.");
             logger.info("Фільтр скинуто, завантажено весь склад");
         });
 
-        HBox rightBox = new HBox(6, labelMist, minField, maxField, findBtn, resetBtn);
+        HBox rightBox = new HBox(10, labelMist, minField, maxField, findBtn, resetBtn);
         rightBox.setAlignment(Pos.CENTER_RIGHT);
 
-        // Розділяємо ліву і праву частину
-        Region spacer = new Region();
-        HBox.setHgrow(spacer, Priority.ALWAYS);
+        // Spacer
+        Region spacer1 = new Region();
+        HBox.setHgrow(spacer1, Priority.ALWAYS);
+        
+        HBox leftControls = new HBox(30, leftBox, centerBox);
+        leftControls.setAlignment(Pos.CENTER_LEFT);
 
-        HBox toolbar = new HBox(10, leftBox, spacer, rightBox);
-        toolbar.setPadding(new Insets(10, 0, 0, 0));
+        // Фінальна панель
+        HBox toolbar = new HBox(leftControls, spacer1, rightBox);
+        toolbar.setStyle("-fx-border-color: #e0e0e0; -fx-border-width: 1 0 0 0; -fx-padding: 10;");
         toolbar.setAlignment(Pos.CENTER);
 
         return toolbar;
+    }
+
+    private HBox createStatusBar() {
+        statusLeftLabel = new Label("Готовий до роботи");
+        statusLeftLabel.setStyle("-fx-text-fill: #57606a;");
+        
+        HBox statusBar = new HBox(statusLeftLabel);
+        statusBar.setStyle("-fx-background-color: #f6f8fa; -fx-padding: 5 15 5 15; -fx-border-color: #e0e0e0; -fx-border-width: 1 0 0 0; -fx-font-size: 12px;");
+        statusBar.setAlignment(Pos.CENTER_LEFT);
+        return statusBar;
     }
 
     // ========== Завантаження даних ==========
@@ -473,6 +591,7 @@ public class MainApp extends Application {
                 new AddVagonCommand(skladService, vagon).execute();
                 nextId++;
                 refreshTable();
+                if (statusLeftLabel != null) statusLeftLabel.setText("Вагон успішно додано.");
                 logger.info("Додано вагон ID={} ({}) через UI", vagon.getId(), vagon.getType());
             }
         } catch (Exception e) {
@@ -503,6 +622,7 @@ public class MainApp extends Application {
                     try {
                         new DeleteVagonCommand(skladService, selected.getId()).execute();
                         refreshTable();
+                        if (statusLeftLabel != null) statusLeftLabel.setText("Вагон успішно видалено.");
                         logger.info("Видалено вагон ID={}", selected.getId());
                     } catch (Exception ex) {
                         logger.error("Помилка видалення вагону ID={}", selected.getId(), ex);
@@ -520,6 +640,7 @@ public class MainApp extends Application {
         try {
             new SortVagonsCommand(potiagService, criterion).execute();
             refreshTable();
+            if (statusLeftLabel != null) statusLeftLabel.setText("Склад відсортовано: " + criterion);
             logger.info("Виконано сортування: {}", criterion);
         } catch (Exception e) {
             logger.error("Помилка сортування вагонів", e);
@@ -544,6 +665,7 @@ public class MainApp extends Application {
             vagonList.setAll(result);
             refreshTrainSchema();
             refreshStats();
+            if (statusLeftLabel != null) statusLeftLabel.setText("Застосовано фільтр: місткість від " + min + " до " + max);
             logger.info("Пошук: знайдено {} вагонів у діапазоні {}-{}", result.size(), min, max);
         } catch (NumberFormatException ex) {
             logger.error("Некоректний ввід при пошуку вагонів", ex);
