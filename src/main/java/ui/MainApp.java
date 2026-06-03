@@ -105,6 +105,7 @@ public class MainApp extends Application {
         root.setBottom(bottomBox);
 
         Scene scene = new Scene(root, 1000, 650);
+        scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm());
         primaryStage.setTitle("Потяг — " + potiag.getNazva());
         primaryStage.setScene(scene);
         primaryStage.setOnCloseRequest(e -> {
@@ -181,11 +182,7 @@ public class MainApp extends Application {
         card.setMaxWidth(Double.MAX_VALUE);
         HBox.setHgrow(card, Priority.ALWAYS);
         card.setAlignment(Pos.CENTER);
-        card.setStyle(
-                "-fx-background-color: white;" +
-                "-fx-background-radius: 8px;" +
-                "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 5, 0, 0, 2);"
-        );
+        card.getStyleClass().add("stats-card");
         return card;
     }
 
@@ -217,6 +214,7 @@ public class MainApp extends Application {
         // Вагони
         for (Vagon v : potiag.getSklad()) {
             Label wagonLabel = new Label("[ " + v.getId() + " ]");
+            wagonLabel.setId("wagonRect-" + v.getId());
             wagonLabel.setFont(Font.font("Monospaced", 13));
             wagonLabel.setPadding(new Insets(6, 8, 6, 8));
             wagonLabel.setAlignment(Pos.CENTER);
@@ -283,6 +281,7 @@ public class MainApp extends Application {
     @SuppressWarnings("unchecked")
     private TableView<Vagon> createTableView() {
         TableView<Vagon> table = new TableView<>(vagonList);
+        table.setId("vagonTable");
 
         table.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> { 
             highlightWagonOnSchema(newSelection); 
@@ -355,19 +354,17 @@ public class MainApp extends Application {
                 if (empty || item == null) {
                     setText(null);
                     setGraphic(null);
-                } else if (item.equals("-")) {
+                } else if (item.equals("-") || item.isEmpty()) {
                     setText("-");
                     setGraphic(null);
                 } else {
                     Label badge = new Label(item);
-                    String bgColor = switch (item) {
-                        case "ВІП" -> "#d9a05b";
-                        case "Купе" -> "#2ea44f";
-                        default -> "#6e7781";
+                    String badgeClass = switch (item) {
+                        case "ВІП" -> "badge-vip";
+                        case "Купе" -> "badge-kupe";
+                        default -> "badge-platskart";
                     };
-                    badge.setStyle("-fx-padding: 3 8 3 8; -fx-background-radius: 10px; " +
-                                   "-fx-font-weight: bold; -fx-text-fill: white; " +
-                                   "-fx-background-color: " + bgColor + ";");
+                    badge.getStyleClass().addAll("badge", badgeClass);
                     setGraphic(badge);
                     setText(null);
                 }
@@ -384,6 +381,22 @@ public class MainApp extends Application {
                 return new ReadOnlyObjectWrapper<>(sv.getTypPryznachennya());
             }
             return new ReadOnlyObjectWrapper<>("-");
+        });
+        pryzCol.setCellFactory(column -> new TableCell<Vagon, String>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    setGraphic(null);
+                } else if (item.equals("-") || item.isEmpty()) {
+                    setText("-");
+                    setGraphic(null);
+                } else {
+                    setText(item);
+                    setGraphic(null);
+                }
+            }
         });
         pryzCol.setPrefWidth(120);
         pryzCol.setMinWidth(120);
@@ -470,11 +483,13 @@ public class MainApp extends Application {
 
         // Ліва група — основні кнопки
         Button addBtn = new Button("Додати вагон");
+        addBtn.setId("addVagonButton");
         addBtn.setPrefHeight(PREF_HEIGHT);
         addBtn.getStyleClass().add(atlantafx.base.theme.Styles.ACCENT);
         addBtn.setOnAction(e -> onDodaty());
 
         Button deleteBtn = new Button("Видалити");
+        deleteBtn.setId("deleteVagonButton");
         deleteBtn.setPrefHeight(PREF_HEIGHT);
         deleteBtn.getStyleClass().add(atlantafx.base.theme.Styles.DANGER);
         deleteBtn.setOnAction(e -> onVydalyty());
@@ -489,11 +504,13 @@ public class MainApp extends Application {
 
         ComboBox<String> sortCombo = new ComboBox<>(FXCollections.observableArrayList(
                 "За ID", "За комфортністю", "За пасажирами", "За багажем"));
+        sortCombo.setId("sortCombo");
         sortCombo.setValue("За ID");
         sortCombo.setPrefHeight(PREF_HEIGHT);
         sortCombo.setPrefWidth(160);
 
         Button sortBtn = new Button("Сортувати");
+        sortBtn.setId("sortBtn");
         sortBtn.setPrefHeight(PREF_HEIGHT);
         sortBtn.setOnAction(e -> onSortuvaty(sortCombo.getValue()));
 
@@ -507,16 +524,19 @@ public class MainApp extends Application {
         labelMist.setPadding(new Insets(0, 4, 0, 0));
 
         TextField minField = new TextField();
+        minField.setId("minField");
         minField.setPromptText("min");
         minField.setPrefWidth(60);
         minField.setPrefHeight(PREF_HEIGHT);
 
         TextField maxField = new TextField();
+        maxField.setId("maxField");
         maxField.setPromptText("max");
         maxField.setPrefWidth(60);
         maxField.setPrefHeight(PREF_HEIGHT);
 
         Button findBtn = new Button("Знайти");
+        findBtn.setId("findBtn");
         findBtn.setPrefHeight(PREF_HEIGHT);
         findBtn.setOnAction(e -> onZnayty(minField, maxField));
 
@@ -542,7 +562,7 @@ public class MainApp extends Application {
 
         // Фінальна панель
         HBox toolbar = new HBox(leftControls, spacer1, rightBox);
-        toolbar.setStyle("-fx-border-color: #e0e0e0; -fx-border-width: 1 0 0 0; -fx-padding: 10;");
+        toolbar.getStyleClass().add("toolbar-pane");
         toolbar.setAlignment(Pos.CENTER);
 
         return toolbar;
@@ -550,10 +570,10 @@ public class MainApp extends Application {
 
     private HBox createStatusBar() {
         statusLeftLabel = new Label("Готовий до роботи");
-        statusLeftLabel.setStyle("-fx-text-fill: #57606a;");
+        statusLeftLabel.setId("statusLeftLabel");
         
         HBox statusBar = new HBox(statusLeftLabel);
-        statusBar.setStyle("-fx-background-color: #f6f8fa; -fx-padding: 5 15 5 15; -fx-border-color: #e0e0e0; -fx-border-width: 1 0 0 0; -fx-font-size: 12px;");
+        statusBar.getStyleClass().add("status-bar");
         statusBar.setAlignment(Pos.CENTER_LEFT);
         return statusBar;
     }

@@ -123,6 +123,26 @@
             <artifactId>atlantafx-base</artifactId>
             <version>2.0.1</version>
         </dependency>
+
+        <!-- 9. TestFX (GUI Автоматизація) -->
+        <dependency>
+            <groupId>org.testfx</groupId>
+            <artifactId>testfx-core</artifactId>
+            <version>4.0.18</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testfx</groupId>
+            <artifactId>testfx-junit5</artifactId>
+            <version>4.0.18</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testfx</groupId>
+            <artifactId>openjfx-monocle</artifactId>
+            <version>8u76-b04</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -143,10 +163,17 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.2.3</version>
+                <version>3.2.5</version>
                 <configuration>
-                    <!-- Передаємо аргументи від JaCoCo в JVM -->
-                    <argLine>${argLine}</argLine>
+                    <!-- Передаємо аргументи від JaCoCo в JVM та налаштування для TestFX -->
+                    <argLine>@{argLine} --add-opens javafx.graphics/com.sun.javafx.application=ALL-UNNAMED --add-opens javafx.graphics/com.sun.glass.ui=ALL-UNNAMED --add-opens javafx.controls/com.sun.javafx.scene.control=ALL-UNNAMED --add-opens javafx.base/com.sun.javafx.runtime=ALL-UNNAMED</argLine>
+                    <useSystemClassLoader>false</useSystemClassLoader>
+                    <systemPropertyVariables>
+                        <testfx.robot>glass</testfx.robot>
+                        <testfx.headless>false</testfx.headless>
+                        <prism.order>sw</prism.order>
+                        <java.awt.headless>true</java.awt.headless>
+                    </systemPropertyVariables>
                 </configuration>
             </plugin>
 

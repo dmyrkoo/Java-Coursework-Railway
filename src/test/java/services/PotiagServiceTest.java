@@ -226,4 +226,35 @@ class PotiagServiceTest {
         assertTrue(result.stream().anyMatch(v -> v.getId() == 3));
         assertTrue(result.stream().anyMatch(v -> v.getId() == 4));
     }
+
+    @Test
+    void testSortuvaty_InshiKryteriyi_Ta_Default() {
+        potiag.dodatyVagon(vagonPlatskart); // ID=3, багаж=30
+        potiag.dodatyVagon(vagonRestoran);  // ID=4, багаж=100
+        potiag.dodatyVagon(vagonVip);       // ID=1, багаж=50
+
+        // Покриваємо "За ID"
+        service.sortuvaty("За ID");
+        assertEquals(1, potiag.getSklad().get(0).getId());
+
+        // Покриваємо "За багажем"
+        service.sortuvaty("За багажем");
+        assertEquals(4, potiag.getSklad().get(0).getId()); // Restoran (100)
+
+        // Покриваємо гілку default (невідомий критерій)
+        service.sortuvaty("Невідомий критерій");
+        assertEquals(3, potiag.getSklad().size()); // Нічого не впало, розмір зберігся
+    }
+
+    @Test
+    void testSortuvatyZaKomfortom_SluzhboviVagony() {
+        // Покриває гілку компаратора, де обидва вагони - службові з однаковим комфортом
+        SlyzhbovyVagon sv1 = new SlyzhbovyVagon(10, 8, 100, 5, "Rest");
+        SlyzhbovyVagon sv2 = new SlyzhbovyVagon(11, 8, 150, 4, "Poshta");
+        potiag.dodatyVagon(sv1);
+        potiag.dodatyVagon(sv2);
+
+        service.sortuvaty("За комфортністю");
+        assertTrue(potiag.getSklad().contains(sv1));
+    }
 }

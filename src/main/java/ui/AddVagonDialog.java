@@ -68,7 +68,9 @@ public class AddVagonDialog extends Dialog<Vagon> {
 
         // === Базові поля ===
         rbPasazhyrsky = new RadioButton("Пасажирський");
+        rbPasazhyrsky.setId("typePassengerRadio");
         rbSlyzhbovy = new RadioButton("Службовий");
+        rbSlyzhbovy.setId("typeServiceRadio");
         typeGroup = new ToggleGroup();
         rbPasazhyrsky.setToggleGroup(typeGroup);
         rbSlyzhbovy.setToggleGroup(typeGroup);
@@ -77,23 +79,28 @@ public class AddVagonDialog extends Dialog<Vagon> {
         HBox typeBox = new HBox(10, rbPasazhyrsky, rbSlyzhbovy);
 
         komfField = new TextField();
+        komfField.setId("komfortnistField");
         komfField.setPromptText("1–10");
         komfField.setPrefHeight(32);
 
         bagazhField = new TextField();
+        bagazhField.setId("bagazhField");
         bagazhField.setPromptText("Наприклад: 50");
         bagazhField.setPrefHeight(32);
 
         // === Поля для пасажирського вагону ===
         pasazhyrivField = new TextField();
+        pasazhyrivField.setId("pasazhyrivField");
         pasazhyrivField.setPromptText("Наприклад: 36");
         pasazhyrivField.setPrefHeight(32);
 
         rivenField = new TextField();
+        rivenField.setId("rivenField");
         rivenField.setPromptText("1–10");
         rivenField.setPrefHeight(32);
 
         klasCombo = new ComboBox<>(FXCollections.observableArrayList(KlasKomfortu.values()));
+        klasCombo.setId("klasCombo");
         klasCombo.setValue(KlasKomfortu.KUPE);
         klasCombo.setPrefHeight(32);
 
@@ -105,10 +112,12 @@ public class AddVagonDialog extends Dialog<Vagon> {
 
         // === Поля для службового вагону ===
         personalField = new TextField();
+        personalField.setId("personalField");
         personalField.setPromptText("Наприклад: 2");
         personalField.setPrefHeight(32);
 
         pryznachennyaField = new TextField();
+        pryznachennyaField.setId("pryznachennyaField");
         pryznachennyaField.setPromptText("Ресторан, Пошта...");
         pryznachennyaField.setPrefHeight(32);
 
@@ -125,7 +134,7 @@ public class AddVagonDialog extends Dialog<Vagon> {
 
         baseGrid.add(new Label("Тип вагону:"), 0, 0);
         baseGrid.add(typeBox, 1, 0);
-        baseGrid.add(new Label("Оснащеність:"), 0, 1);
+        baseGrid.add(new Label("Комфортність:"), 0, 1);
         baseGrid.add(komfField, 1, 1);
         baseGrid.add(new Label("Кількість багажу:"), 0, 2);
         baseGrid.add(bagazhField, 1, 2);
@@ -141,8 +150,13 @@ public class AddVagonDialog extends Dialog<Vagon> {
 
             if (rbPasazhyrsky.isSelected()) {
                 content.getChildren().add(pasazhyrskyBox);
+                personalField.clear();
+                pryznachennyaField.clear();
             } else {
                 content.getChildren().add(slyzhbovyBox);
+                pasazhyrivField.clear();
+                rivenField.clear();
+                klasCombo.setValue(KlasKomfortu.KUPE);
             }
             getDialogPane().getScene().getWindow().sizeToScene();
         });
@@ -161,18 +175,17 @@ public class AddVagonDialog extends Dialog<Vagon> {
 
     /**
      * Валідує поля перед закриттям діалогу.
+     * Делегує перевірку значень до {@link VagonInputValidator}.
      */
     private boolean validateInput() {
         try {
-            int komf = parseIntField(komfField, "Оснащеність");
-            if (komf < 1 || komf > 10) {
-                showValidationError("Оснащеність повинна бути від 1 до 10.");
-                return false;
-            }
-
+            int komf = parseIntField(komfField, "Комфортність");
             int bagazh = parseIntField(bagazhField, "Кількість багажу");
-            if (bagazh < 0) {
-                showValidationError("Кількість багажу не може бути меншою за 0.");
+
+            // Валідація базових полів
+            var baseError = VagonInputValidator.validateBase(komf, bagazh);
+            if (baseError.isPresent()) {
+                showValidationError(baseError.get());
                 return false;
             }
 
@@ -182,20 +195,20 @@ public class AddVagonDialog extends Dialog<Vagon> {
                     return false;
                 }
                 int pas = parseIntField(pasazhyrivField, "Кількість пасажирів");
-                if (pas <= 0) {
-                    showValidationError("Кількість пасажирів повинна бути більшою за 0.");
+                int riven = parseIntField(rivenField, "Рівень обслуговування");
+
+                var pasError = VagonInputValidator.validatePasazhyrsky(pas, riven, klasCombo.getValue() != null);
+                if (pasError.isPresent()) {
+                    showValidationError(pasError.get());
                     return false;
                 }
-                parseIntField(rivenField, "Рівень обслуговування");
             } else {
                 int pers = parseIntField(personalField, "Кількість персоналу");
-                if (pers <= 0) {
-                    showValidationError("Кількість персоналу повинна бути більшою за 0.");
-                    return false;
-                }
                 String pryznachennya = pryznachennyaField.getText().trim();
-                if (pryznachennya.isEmpty()) {
-                    showValidationError("Поле 'Тип призначення' не може бути порожнім.");
+
+                var sluzhError = VagonInputValidator.validateSlyzhbovy(pers, pryznachennya);
+                if (sluzhError.isPresent()) {
+                    showValidationError(sluzhError.get());
                     return false;
                 }
             }
