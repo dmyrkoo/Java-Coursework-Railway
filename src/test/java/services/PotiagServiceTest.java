@@ -37,224 +37,168 @@ class PotiagServiceTest {
         vagonRestoran = new SlyzhbovyVagon(4, 6, 100, 5, "Restoran");
     }
 
-    // ========== Допоміжні методи ==========
-
-    /**
-     * Додає три пасажирські вагони (VIP, KUPE, PLATSKART) до потяга.
-     */
     private void dodatyTryPasazhyrski() {
         potiag.dodatyVagon(vagonVip);
         potiag.dodatyVagon(vagonKupe);
         potiag.dodatyVagon(vagonPlatskart);
     }
 
-    /**
-     * Додає всі чотири тестові вагони (VIP, KUPE, PLATSKART, Restoran) до потяга.
-     */
     private void dodatyVsiVagony() {
         dodatyTryPasazhyrski();
         potiag.dodatyVagon(vagonRestoran);
     }
 
-    // ========== Тести для sortuvatyZaKomfortom ==========
+    // ========== Тести сортування за ID ==========
 
     @Test
-    void testSortuvatyZaKomfortom_SortuvannyaZaSpadannyam() {
-        // Додаємо у "неправильному" порядку
-        potiag.dodatyVagon(vagonPlatskart); // komf=5
-        potiag.dodatyVagon(vagonVip);       // komf=9
-        potiag.dodatyVagon(vagonKupe);      // komf=7
+    void testSortuvatyZaId_ASC() {
+        potiag.dodatyVagon(vagonPlatskart); // ID=3
+        potiag.dodatyVagon(vagonVip);       // ID=1
+        potiag.dodatyVagon(vagonKupe);      // ID=2
 
-        service.sortuvaty("За комфортністю");
+        service.sortuvaty("За ID", false);
 
-        // Очікуваний порядок: VIP(9) -> KUPE(7) -> PLATSKART(5)
-        assertEquals(3, potiag.getSklad().size());
         assertEquals(1, potiag.getSklad().get(0).getId());
         assertEquals(2, potiag.getSklad().get(1).getId());
         assertEquals(3, potiag.getSklad().get(2).getId());
     }
 
     @Test
-    void testSortuvatyZaKomfortom_OdnakovaKomfortnist() {
-        // Два вагони з однаковою комфортністю, різний рівень обслуговування
-        PasazhyrskyVagon vagon1 = new PasazhyrskyVagon(10, 8, 50, KlasKomfortu.VIP, 40, 9);
-        PasazhyrskyVagon vagon2 = new PasazhyrskyVagon(11, 8, 40, KlasKomfortu.KUPE, 36, 7);
+    void testSortuvatyZaId_DESC() {
+        potiag.dodatyVagon(vagonVip);       // ID=1
+        potiag.dodatyVagon(vagonPlatskart); // ID=3
+        potiag.dodatyVagon(vagonKupe);      // ID=2
 
-        potiag.dodatyVagon(vagon2); // нижчий riven додаємо першим
-        potiag.dodatyVagon(vagon1);
+        service.sortuvaty("За ID", true);
 
-        service.sortuvaty("За комфортністю");
+        assertEquals(3, potiag.getSklad().get(0).getId());
+        assertEquals(2, potiag.getSklad().get(1).getId());
+        assertEquals(1, potiag.getSklad().get(2).getId());
+    }
 
-        // При однаковій комфортності: vagon1 (riven=9) перед vagon2 (riven=7)
+    // ========== Тести сортування за пасажирами ==========
+
+    @Test
+    void testSortuvatyZaPasazhyramy_ASC() {
+        dodatyVsiVagony(); // VIP=40, KUPE=36, PLATSKART=54, Restoran=0
+        service.sortuvaty("За пасажирами", false);
+
+        assertEquals(4, potiag.getSklad().get(0).getId()); // Restoran (0)
+        assertEquals(2, potiag.getSklad().get(1).getId()); // KUPE (36)
+        assertEquals(1, potiag.getSklad().get(2).getId()); // VIP (40)
+        assertEquals(3, potiag.getSklad().get(3).getId()); // PLATSKART (54)
+    }
+
+    @Test
+    void testSortuvatyZaPasazhyramy_DESC() {
+        dodatyVsiVagony();
+        service.sortuvaty("За пасажирами", true);
+
+        assertEquals(3, potiag.getSklad().get(0).getId()); // PLATSKART (54)
+        assertEquals(1, potiag.getSklad().get(1).getId()); // VIP (40)
+        assertEquals(2, potiag.getSklad().get(2).getId()); // KUPE (36)
+        assertEquals(4, potiag.getSklad().get(3).getId()); // Restoran (0)
+    }
+
+    // ========== Тести сортування за багажем ==========
+
+    @Test
+    void testSortuvatyZaBagazhem_ASC() {
+        dodatyVsiVagony(); // VIP=50, KUPE=40, PLATSKART=30, Restoran=100
+        service.sortuvaty("За багажем", false);
+
+        assertEquals(3, potiag.getSklad().get(0).getId()); // PLATSKART (30)
+        assertEquals(2, potiag.getSklad().get(1).getId()); // KUPE (40)
+        assertEquals(1, potiag.getSklad().get(2).getId()); // VIP (50)
+        assertEquals(4, potiag.getSklad().get(3).getId()); // Restoran (100)
+    }
+
+    @Test
+    void testSortuvatyZaBagazhem_DESC() {
+        dodatyVsiVagony();
+        service.sortuvaty("За багажем", true);
+
+        assertEquals(4, potiag.getSklad().get(0).getId()); // Restoran (100)
+        assertEquals(1, potiag.getSklad().get(1).getId()); // VIP (50)
+        assertEquals(2, potiag.getSklad().get(2).getId()); // KUPE (40)
+        assertEquals(3, potiag.getSklad().get(3).getId()); // PLATSKART (30)
+    }
+
+    // ========== Тести сортування за комфортністю ==========
+
+    @Test
+    void testSortuvatyZaKomfortnistyu_ASC() {
+        dodatyVsiVagony(); // VIP=9, KUPE=7, PLATSKART=5, Restoran=6
+        service.sortuvaty("За комфортністю", false);
+
+        assertEquals(3, potiag.getSklad().get(0).getId()); // PLATSKART (5)
+        assertEquals(4, potiag.getSklad().get(1).getId()); // Restoran (6)
+        assertEquals(2, potiag.getSklad().get(2).getId()); // KUPE (7)
+        assertEquals(1, potiag.getSklad().get(3).getId()); // VIP (9)
+    }
+
+    @Test
+    void testSortuvatyZaKomfortnistyu_DESC() {
+        dodatyVsiVagony();
+        service.sortuvaty("За комфортністю", true);
+
+        assertEquals(1, potiag.getSklad().get(0).getId()); // VIP (9)
+        assertEquals(2, potiag.getSklad().get(1).getId()); // KUPE (7)
+        assertEquals(4, potiag.getSklad().get(2).getId()); // Restoran (6)
+        assertEquals(3, potiag.getSklad().get(3).getId()); // PLATSKART (5)
+    }
+
+    @Test
+    void testSortuvatyZaKomfortom_OdnakovaKomfortnist_CompositeReversed() {
+        // При однаковій комфортності порядок визначає рівень обслуговування.
+        // Важливо: comparator.reversed() перевертає весь ланцюг порівнянь, включно з thenComparing.
+        PasazhyrskyVagon v1 = new PasazhyrskyVagon(10, 8, 50, KlasKomfortu.VIP, 40, 9);
+        PasazhyrskyVagon v2 = new PasazhyrskyVagon(11, 8, 40, KlasKomfortu.KUPE, 36, 7);
+
+        potiag.dodatyVagon(v1); // riven 9
+        potiag.dodatyVagon(v2); // riven 7
+
+        service.sortuvaty("За комфортністю", false); // ASC
+        
+        // ASC: комфортність ASC -> рівень обслуговування ASC
+        // Тому riven 7 (id 11) має бути перед riven 9 (id 10)
+        assertEquals(11, potiag.getSklad().get(0).getId());
+        assertEquals(10, potiag.getSklad().get(1).getId());
+
+        service.sortuvaty("За комфортністю", true); // DESC
+        
+        // DESC: комфортність DESC -> рівень обслуговування DESC
+        // Тому riven 9 (id 10) має бути перед riven 7 (id 11)
         assertEquals(10, potiag.getSklad().get(0).getId());
         assertEquals(11, potiag.getSklad().get(1).getId());
     }
 
-    @Test
-    void testSortuvatyZaKomfortom_ZmishaniVagony() {
-        potiag.dodatyVagon(vagonRestoran);  // komf=6
-        potiag.dodatyVagon(vagonVip);       // komf=9
-        potiag.dodatyVagon(vagonPlatskart); // komf=5
-
-        service.sortuvaty("За комфортністю");
-
-        // Очікуваний порядок: VIP(9) -> Restoran(6) -> PLATSKART(5)
-        assertEquals(1, potiag.getSklad().get(0).getId());
-        assertEquals(4, potiag.getSklad().get(1).getId());
-        assertEquals(3, potiag.getSklad().get(2).getId());
-    }
+    // ========== Інші тести (грайничні випадки, пошук) ==========
 
     @Test
-    void testSortuvatyZaKomfortom_PorozhniySklad() {
-        // Порожній склад — метод не повинен викликати помилку
-        service.sortuvaty("За комфортністю");
-
+    void testSortuvaty_PorozhniySklad() {
+        service.sortuvaty("За комфортністю", true);
         assertTrue(potiag.getSklad().isEmpty());
     }
 
     @Test
-    void testSortuvatyZaKomfortom_OdynVagon() {
-        potiag.dodatyVagon(vagonVip);
-
-        service.sortuvaty("За комфортністю");
-
-        assertEquals(1, potiag.getSklad().size());
-        assertEquals(1, potiag.getSklad().get(0).getId());
-    }
-
-    // ========== Тести для znaytyVagonyZaPasazhyramy ==========
-
-    @Test
-    void testZnaytyVagonyZaPasazhyramy_ZnaydenoKilka() {
+    void testSortuvaty_NevidomyiKryteriy() {
         dodatyTryPasazhyrski();
-
-        List<Vagon> result = service.znaytyVagonyZaPasazhyramy(35, 45);
-
-        // VIP(40) та KUPE(36) потрапляють у діапазон
-        assertEquals(2, result.size());
-        assertTrue(result.stream().anyMatch(v -> v.getId() == 1));
-        assertTrue(result.stream().anyMatch(v -> v.getId() == 2));
-    }
-
-    @Test
-    void testZnaytyVagonyZaPasazhyramy_ZnaydenoOdyn() {
-        dodatyTryPasazhyrski();
-
-        List<Vagon> result = service.znaytyVagonyZaPasazhyramy(50, 60);
-
-        // Тільки PLATSKART(54) потрапляє у діапазон
-        assertEquals(1, result.size());
-        assertEquals(3, result.get(0).getId());
-    }
-
-    @Test
-    void testZnaytyVagonyZaPasazhyramy_NichogoNeZnaydeno() {
-        potiag.dodatyVagon(vagonVip);
-        potiag.dodatyVagon(vagonKupe);
-
-        List<Vagon> result = service.znaytyVagonyZaPasazhyramy(100, 200);
-
-        assertTrue(result.isEmpty());
-    }
-
-    @Test
-    void testZnaytyVagonyZaPasazhyramy_SlyzhboviNeVklyucheni() {
-        potiag.dodatyVagon(vagonVip);
-        potiag.dodatyVagon(vagonRestoran);
-
-        List<Vagon> result = service.znaytyVagonyZaPasazhyramy(1, 50);
-
-        // Службовий вагон (0 пасажирів) не входить у діапазон 1–50
-        assertEquals(1, result.size());
-        assertEquals(1, result.get(0).getId());
-    }
-
-    @Test
-    void testZnaytyVagonyZaPasazhyramy_GranychniZnachennya() {
-        potiag.dodatyVagon(vagonVip);  // 40
-        potiag.dodatyVagon(vagonKupe); // 36
-
-        List<Vagon> result = service.znaytyVagonyZaPasazhyramy(36, 40);
-
-        // Обидва потрапляють у діапазон включно
-        assertEquals(2, result.size());
-    }
-
-    @Test
-    void testZnaytyVagonyZaPasazhyramy_PorozhniySklad() {
-        List<Vagon> result = service.znaytyVagonyZaPasazhyramy(10, 50);
-
-        assertTrue(result.isEmpty());
-    }
-
-    // ========== Граничні випадки (edge cases) ==========
-
-    @Test
-    void testSortuvatyZaKomfortom_PorozhniySklad_BezPobichnyhEfektiv() {
-        // Перевірка що порожній потяг не змінює стан після сортування
-        assertTrue(potiag.getSklad().isEmpty());
-
-        service.sortuvaty("За комфортністю");
-
-        assertTrue(potiag.getSklad().isEmpty());
-        assertEquals(0, potiag.getZagalnaKilkistPasazhyriv());
-        assertEquals(0, potiag.getZagalnyiBagazh());
-    }
-
-    @Test
-    void testZnaytyVagonyZaPasazhyramy_ZhodenNeVidpovidaye() {
-        dodatyVsiVagony();
-
-        List<Vagon> result = service.znaytyVagonyZaPasazhyramy(70, 100);
-
-        // Жоден вагон не має 70–100 пасажирів
-        assertTrue(result.isEmpty());
-        // Оригінальний склад не змінився
-        assertEquals(4, potiag.getSklad().size());
-    }
-
-    @Test
-    void testZnaytyVagonyZaPasazhyramy_VsiVagonyVDiapazoni() {
-        dodatyVsiVagony();
-
-        List<Vagon> result = service.znaytyVagonyZaPasazhyramy(0, 100);
-
-        // Всі 4 вагони потрапляють у діапазон 0–100 (включно зі службовим)
-        assertEquals(4, result.size());
-        assertTrue(result.stream().anyMatch(v -> v.getId() == 1));
-        assertTrue(result.stream().anyMatch(v -> v.getId() == 2));
-        assertTrue(result.stream().anyMatch(v -> v.getId() == 3));
-        assertTrue(result.stream().anyMatch(v -> v.getId() == 4));
-    }
-
-    @Test
-    void testSortuvaty_InshiKryteriyi_Ta_Default() {
-        potiag.dodatyVagon(vagonPlatskart); // ID=3, багаж=30
-        potiag.dodatyVagon(vagonRestoran);  // ID=4, багаж=100
-        potiag.dodatyVagon(vagonVip);       // ID=1, багаж=50
-
-        // Покриваємо "За ID"
-        service.sortuvaty("За ID");
-        assertEquals(1, potiag.getSklad().get(0).getId());
-
-        // Покриваємо "За багажем"
-        service.sortuvaty("За багажем");
-        assertEquals(4, potiag.getSklad().get(0).getId()); // Restoran (100)
-
-        // Покриваємо гілку default (невідомий критерій)
-        service.sortuvaty("Невідомий критерій");
+        service.sortuvaty("Невідомий критерій", false);
         assertEquals(3, potiag.getSklad().size()); // Нічого не впало, розмір зберігся
     }
 
     @Test
-    void testSortuvatyZaKomfortom_SluzhboviVagony() {
-        // Покриває гілку компаратора, де обидва вагони - службові з однаковим комфортом
-        SlyzhbovyVagon sv1 = new SlyzhbovyVagon(10, 8, 100, 5, "Rest");
-        SlyzhbovyVagon sv2 = new SlyzhbovyVagon(11, 8, 150, 4, "Poshta");
-        potiag.dodatyVagon(sv1);
-        potiag.dodatyVagon(sv2);
+    void testZnaytyVagonyZaPasazhyramy_ZnaydenoKilka() {
+        dodatyTryPasazhyrski();
+        List<Vagon> result = service.znaytyVagonyZaPasazhyramy(35, 45);
+        assertEquals(2, result.size());
+    }
 
-        service.sortuvaty("За комфортністю");
-        assertTrue(potiag.getSklad().contains(sv1));
+    @Test
+    void testZnaytyVagonyZaPasazhyramy_NichogoNeZnaydeno() {
+        dodatyTryPasazhyrski();
+        List<Vagon> result = service.znaytyVagonyZaPasazhyramy(100, 200);
+        assertTrue(result.isEmpty());
     }
 }

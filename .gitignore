@@ -19,6 +19,7 @@
 *.iws
 *.ipr
 /out/
+.vscode/
 
 # Eclipse
 .project
@@ -70,5 +71,7 @@ build/
 !src/**
 !pom.xml
 
-# End of .gitignore
+# База даних
+potiag.db
+*.sqlite
 

@@ -510,12 +510,16 @@ public class MainApp extends Application {
         sortCombo.setPrefHeight(PREF_HEIGHT);
         sortCombo.setPrefWidth(160);
 
+        CheckBox descCheckBox = new CheckBox("За спаданням");
+        descCheckBox.setId("descCheckBox");
+        descCheckBox.setPrefHeight(PREF_HEIGHT);
+
         Button sortBtn = new Button("Сортувати");
         sortBtn.setId("sortBtn");
         sortBtn.setPrefHeight(PREF_HEIGHT);
-        sortBtn.setOnAction(e -> onSortuvaty(sortCombo.getValue()));
+        sortBtn.setOnAction(e -> onSortuvaty(sortCombo.getValue(), descCheckBox.isSelected()));
 
-        HBox centerBox = new HBox(10, sortLabel, sortCombo, sortBtn);
+        HBox centerBox = new HBox(10, sortLabel, sortCombo, descCheckBox, sortBtn);
         centerBox.setAlignment(Pos.CENTER);
 
         // Права група — пошук за місткістю
@@ -660,13 +664,13 @@ public class MainApp extends Application {
         }
     }
 
-    private void onSortuvaty(String criterion) {
+    private void onSortuvaty(String criterion, boolean isDesc) {
         try {
-            new SortVagonsCommand(potiagService, criterion).execute();
+            new SortVagonsCommand(potiagService, criterion, isDesc).execute();
             refreshTable();
             if (statusLeftLabel != null)
-                statusLeftLabel.setText("Склад відсортовано: " + criterion);
-            logger.info("Виконано сортування: {}", criterion);
+                statusLeftLabel.setText("Склад відсортовано: " + criterion + (isDesc ? " (за спаданням)" : " (за зростанням)"));
+            logger.info("Виконано сортування: {} {}", criterion, isDesc ? "DESC" : "ASC");
         } catch (Exception e) {
             logger.error("Помилка сортування вагонів", e);
             showWarning("Не вдалося виконати сортування: " + e.getMessage());

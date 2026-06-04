@@ -27,7 +27,7 @@ public class PotiagService {
      *
      * @param criterion критерій сортування ("За комфортністю", "За пасажирами", "За багажем")
      */
-    public void sortuvaty(String criterion) {
+    public void sortuvaty(String criterion, boolean isDesc) {
         List<Vagon> sklad = potiag.getSklad();
 
         if (sklad.isEmpty()) {
@@ -35,36 +35,42 @@ public class PotiagService {
             return;
         }
 
+        Comparator<Vagon> comparator;
+
         switch (criterion) {
             case "За ID":
-                sklad.sort(Comparator.comparingInt(Vagon::getId));
+                comparator = Comparator.comparingInt(Vagon::getId);
                 break;
             case "За комфортністю":
-                sklad.sort(Comparator
-                        .comparingInt(Vagon::getKomfortnist).reversed()
+                comparator = Comparator.comparingInt(Vagon::getKomfortnist)
                         .thenComparing((v1, v2) -> {
                             if (v1 instanceof PasazhyrskyVagon && v2 instanceof PasazhyrskyVagon) {
                                 return Integer.compare(
-                                        ((PasazhyrskyVagon) v2).getRivenObslugovuvannya(),
-                                        ((PasazhyrskyVagon) v1).getRivenObslugovuvannya()
+                                        ((PasazhyrskyVagon) v1).getRivenObslugovuvannya(),
+                                        ((PasazhyrskyVagon) v2).getRivenObslugovuvannya()
                                 );
                             }
                             return 0;
-                        })
-                );
+                        });
                 break;
             case "За пасажирами":
-                sklad.sort(Comparator.comparingInt(Vagon::getPasazhyrskaMistkist).reversed());
+                comparator = Comparator.comparingInt(Vagon::getPasazhyrskaMistkist);
                 break;
             case "За багажем":
-                sklad.sort(Comparator.comparingInt(Vagon::getBagazhKilkist).reversed());
+                comparator = Comparator.comparingInt(Vagon::getBagazhKilkist);
                 break;
             default:
                 logger.warn("Невідомий критерій сортування: {}", criterion);
                 return;
         }
 
-        logger.info("Виконано сортування вагонів за критерієм: {}", criterion);
+        if (isDesc) {
+            comparator = comparator.reversed();
+        }
+
+        sklad.sort(comparator);
+
+        logger.info("Виконано сортування вагонів за критерієм: {}, DESC: {}", criterion, isDesc);
     }
 
     /**
