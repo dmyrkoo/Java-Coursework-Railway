@@ -1,2 +1,0 @@
-NAZVA:Test Potiag
-PASAZHYRSKY;1;8;50;VIP;40;9
